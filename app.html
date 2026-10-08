@@ -1,0 +1,750 @@
+<title>Detector de riesgos comunicacionales</title>
+<meta name="description" content="Revisá un texto antes de publicarlo: semáforo de riesgo en veracidad, inclusión, privacidad y polémica, con sugerencias que no cambian tu mensaje.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: barra superior, herramienta en dos columnas (texto | diagnóstico) que se apilan en móvil, y abajo la matriz, públicos y contacto. */
+:root {
+  --bg: #f3f5f9;
+  --surface: #ffffff;
+  --surface-2: #eaedf4;
+  --ink: #151a2d;
+  --muted: #586079;
+  --line: #d9dde8;
+  --accent: #2e3ea6;
+  --accent-ink: #ffffff;
+  --accent-soft: #e5e8fa;
+  --ok: #1d7f47;   --ok-soft: #e1f3e8;
+  --warn: #9a6410; --warn-soft: #fbefd9; --warn-light: #e9a531;
+  --risk: #bf2f2f; --risk-soft: #fbe4e4;
+  --ok-light: #2fb067; --risk-light: #e54848;
+  --off: #c9cedb;
+  --housing: #1d2235;
+  --f-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f121b; --surface: #171b28; --surface-2: #1f2433; --ink: #e7e9f2; --muted: #9ba2ba; --line: #2a3043;
+    --accent: #95a1ff; --accent-ink: #0f121b; --accent-soft: #232a4f;
+    --ok: #5fd08f; --ok-soft: #142d1f; --warn: #f0b552; --warn-soft: #33260d; --risk: #f37b7b; --risk-soft: #3a1719;
+    --ok-light: #3ccf7c; --warn-light: #f2b13c; --risk-light: #ff5c5c; --off: #2f3548; --housing: #0a0c13;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f121b; --surface: #171b28; --surface-2: #1f2433; --ink: #e7e9f2; --muted: #9ba2ba; --line: #2a3043;
+  --accent: #95a1ff; --accent-ink: #0f121b; --accent-soft: #232a4f;
+  --ok: #5fd08f; --ok-soft: #142d1f; --warn: #f0b552; --warn-soft: #33260d; --risk: #f37b7b; --risk-soft: #3a1719;
+  --ok-light: #3ccf7c; --warn-light: #f2b13c; --risk-light: #ff5c5c; --off: #2f3548; --housing: #0a0c13;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 16px/1.55 var(--f-body);
+}
+img { max-width: 100%; }
+a { color: var(--accent); }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; line-height: 1.15; margin: 0; }
+p { margin: 0; }
+
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 20px; }
+
+/* Barra superior */
+.top { border-bottom: 1px solid var(--line); background: var(--surface); }
+.top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding-block: 14px; }
+.marca { display: flex; align-items: center; gap: 10px; font-family: var(--f-display); font-weight: 700; font-size: 1.05rem; color: var(--ink); text-decoration: none; }
+.marca-icono { display: inline-flex; flex-direction: column; gap: 3px; background: var(--housing); padding: 5px 6px; border-radius: 7px; }
+.marca-icono i { width: 8px; height: 8px; border-radius: 50%; display: block; }
+.marca-icono i:nth-child(1) { background: var(--risk-light); }
+.marca-icono i:nth-child(2) { background: var(--warn-light); }
+.marca-icono i:nth-child(3) { background: var(--ok-light); }
+.nav { display: flex; gap: 18px; flex-wrap: wrap; font-size: .95rem; }
+.nav a { color: var(--muted); text-decoration: none; }
+.nav a:hover { color: var(--ink); }
+
+/* Intro */
+.intro { padding-block: 36px 20px; display: grid; gap: 12px; }
+.eyebrow { font-family: var(--f-mono); font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.intro h1 { font-size: clamp(1.9rem, 4.2vw, 3rem); font-weight: 800; letter-spacing: -0.02em; max-width: 22ch; }
+.intro p { color: var(--muted); max-width: 62ch; font-size: 1.05rem; }
+
+/* Herramienta */
+.herramienta { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 20px; align-items: start; padding-block: 8px 48px; }
+.herramienta > form { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); }
+@media (max-width: 900px) { .herramienta { grid-template-columns: minmax(0, 1fr); } .herramienta > form { position: static; } }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 22px; min-width: 0; }
+.panel-cabecera { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+.panel-cabecera h2 { font-size: 1.15rem; }
+
+.modo { font-size: .82rem; display: inline-flex; align-items: center; gap: 7px; color: var(--muted); padding: 4px 10px; border-radius: 99px; background: var(--surface-2); }
+.modo::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--off); }
+.modo[data-motor="vivo"]::before { background: var(--ok-light); }
+
+.paso { display: grid; gap: 8px; margin-bottom: 18px; border: 0; padding: 0; min-width: 0; }
+.paso legend, .paso > label { font-weight: 700; font-size: .95rem; padding: 0; margin-bottom: 8px; }
+.paso-num { font-family: var(--f-mono); font-size: .75rem; color: var(--accent); margin-right: 6px; }
+.opciones { display: flex; flex-wrap: wrap; gap: 8px; }
+.opcion { position: relative; }
+.opcion input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.opcion span { display: inline-block; padding: 8px 13px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); font-size: .93rem; cursor: pointer; transition: background .15s, border-color .15s; }
+.opcion input:checked + span { background: var(--accent-soft); border-color: var(--accent); color: var(--ink); font-weight: 700; }
+.opcion input:focus-visible + span { outline: 3px solid var(--accent); outline-offset: 2px; }
+select, textarea, input[type="text"], input[type="password"] {
+  font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; width: 100%;
+}
+select { padding: 9px 10px; }
+textarea { padding: 12px; min-height: 230px; resize: vertical; line-height: 1.5; }
+input[type="password"] { padding: 9px 10px; }
+.opcional { font-weight: 400; color: var(--muted); font-size: .85rem; margin-left: 6px; }
+.ayuda { font-size: .85rem; color: var(--muted); }
+.contador { font-family: var(--f-mono); font-size: .75rem; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+
+.ejemplos { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: .88rem; color: var(--muted); }
+.btn-link { font: inherit; background: none; border: 0; padding: 4px 2px; color: var(--accent); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.btn-link[aria-pressed="true"] { color: var(--ink); text-decoration-thickness: 2px; font-weight: 700; }
+
+.acciones { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 4px; }
+.btn { font: 700 1rem var(--f-body); border: 0; border-radius: 8px; padding: 12px 20px; cursor: pointer; background: var(--accent); color: var(--accent-ink); }
+.btn:disabled { opacity: .55; cursor: progress; }
+.btn-sec { font: inherit; font-size: .9rem; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 8px; padding: 7px 12px; cursor: pointer; }
+.aviso { font-size: .9rem; color: var(--muted); }
+.aviso.error { color: var(--risk); }
+
+/* Diagnóstico */
+.veredicto { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 20px; align-items: center; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+.semaforo { background: var(--housing); border-radius: 14px; padding: 10px 9px; display: grid; gap: 8px; }
+.semaforo span { width: 30px; height: 30px; border-radius: 50%; background: #2b3146; display: block; transition: background .25s, box-shadow .25s; }
+.semaforo[data-nivel="rojo"] .l-rojo { background: var(--risk-light); box-shadow: 0 0 16px var(--risk-light); }
+.semaforo[data-nivel="amarillo"] .l-amarillo { background: var(--warn-light); box-shadow: 0 0 16px var(--warn-light); }
+.semaforo[data-nivel="verde"] .l-verde { background: var(--ok-light); box-shadow: 0 0 16px var(--ok-light); }
+.semaforo.analizando span { animation: titila 1.2s infinite; }
+.semaforo.analizando .l-amarillo { animation-delay: .4s; }
+.semaforo.analizando .l-verde { animation-delay: .8s; }
+@keyframes titila { 0%, 100% { background: #2b3146; } 40% { background: #8b93ad; } }
+@media (prefers-reduced-motion: reduce) { .semaforo.analizando span { animation: none; background: #59607a; } }
+.veredicto h3 { font-size: 1.6rem; font-weight: 800; }
+.veredicto[data-nivel="rojo"] h3 { color: var(--risk); }
+.veredicto[data-nivel="amarillo"] h3 { color: var(--warn); }
+.veredicto[data-nivel="verde"] h3 { color: var(--ok); }
+.veredicto p { color: var(--muted); margin-top: 4px; }
+.etiqueta { display: inline-block; margin-top: 10px; font-family: var(--f-mono); font-size: .72rem; letter-spacing: .05em; text-transform: uppercase; padding: 3px 8px; border-radius: 5px; background: var(--surface-2); color: var(--muted); }
+
+.bloque { padding-block: 18px; border-bottom: 1px solid var(--line); display: grid; gap: 12px; }
+.bloque:last-child { border-bottom: 0; padding-bottom: 0; }
+.bloque-titulo { font-family: var(--f-mono); font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.mensaje-central { font-size: 1.02rem; border-left: 3px solid var(--accent); padding-left: 12px; }
+
+.cats { display: grid; gap: 10px; }
+.cat { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.cat > summary { list-style: none; display: grid; grid-template-columns: 6px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px 14px 12px 0; cursor: pointer; }
+.cat > summary::-webkit-details-marker { display: none; }
+.cat-franja { align-self: stretch; }
+.cat[data-nivel="rojo"] .cat-franja { background: var(--risk); }
+.cat[data-nivel="amarillo"] .cat-franja { background: var(--warn-light); }
+.cat[data-nivel="verde"] .cat-franja { background: var(--ok); }
+.cat-nombre { font-weight: 700; }
+.cat-resumen { color: var(--muted); font-size: .92rem; }
+.chip { font-size: .78rem; font-weight: 700; padding: 3px 9px; border-radius: 99px; white-space: nowrap; }
+.chip-rojo { background: var(--risk-soft); color: var(--risk); }
+.chip-amarillo { background: var(--warn-soft); color: var(--warn); }
+.chip-verde { background: var(--ok-soft); color: var(--ok); }
+.hallazgos { margin: 0; padding: 0 14px 14px 20px; list-style: none; display: grid; gap: 10px; }
+.hallazgo { display: grid; gap: 3px; font-size: .93rem; }
+.hallazgo q { font-style: italic; }
+.hallazgo q::before { content: "«"; } .hallazgo q::after { content: "»"; }
+.codigo { font-family: var(--f-mono); font-size: .72rem; padding: 1px 6px; border-radius: 4px; background: var(--surface-2); color: var(--ink); margin-right: 6px; font-style: normal; }
+.sin-hallazgos { padding: 0 14px 14px 20px; color: var(--muted); font-size: .92rem; }
+
+.texto-marcado { white-space: pre-wrap; overflow-wrap: anywhere; background: var(--surface-2); border-radius: 8px; padding: 14px; font-size: .95rem; max-height: 340px; overflow: auto; }
+mark { color: inherit; border-radius: 3px; padding: 0 2px; }
+mark.m-rojo { background: var(--risk-soft); box-shadow: inset 0 -2px 0 var(--risk); }
+mark.m-amarillo { background: var(--warn-soft); box-shadow: inset 0 -2px 0 var(--warn-light); }
+mark sup { font-family: var(--f-mono); font-size: .62rem; margin-left: 2px; color: var(--muted); }
+.nota { font-size: .85rem; color: var(--muted); }
+
+.sugerencias { display: grid; gap: 12px; }
+.sug { border: 1px solid var(--line); border-radius: 8px; padding: 14px; display: grid; gap: 10px; }
+.sug-cab { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; align-items: center; font-size: .82rem; color: var(--muted); }
+.sug-cab strong { color: var(--ink); }
+.antes, .despues { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 10px; font-size: .95rem; }
+.antes span:first-child, .despues span:first-child { font-family: var(--f-mono); font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); padding-top: 3px; }
+.antes span:last-child { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--risk); }
+.despues span:last-child { font-weight: 700; }
+.sug-razones { display: grid; gap: 4px; font-size: .88rem; color: var(--muted); }
+.sug-razones b { color: var(--ink); font-weight: 700; }
+.descargo { font-size: .85rem; color: var(--muted); background: var(--surface-2); border-radius: 8px; padding: 10px 12px; }
+
+/* Secciones informativas */
+.seccion { padding-block: 48px; border-top: 1px solid var(--line); }
+.seccion > .wrap > h2 { font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 800; margin-bottom: 8px; }
+.seccion > .wrap > p { color: var(--muted); max-width: 64ch; margin-bottom: 24px; }
+.matriz { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 1100px) { .matriz { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .matriz { grid-template-columns: minmax(0, 1fr); } }
+.matriz-col { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.matriz-col h3 { font-size: 1.2rem; }
+.matriz-col > p { color: var(--muted); font-size: .92rem; }
+.criterios { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; font-size: .9rem; }
+.criterios b { display: block; }
+.criterios small { color: var(--muted); font-size: .86rem; display: block; }
+.niveles { display: grid; gap: 6px; font-size: .85rem; padding-top: 10px; border-top: 1px solid var(--line); }
+.niveles div { display: grid; grid-template-columns: 12px minmax(0, 1fr); gap: 8px; align-items: baseline; color: var(--muted); }
+.niveles i { width: 10px; height: 10px; border-radius: 50%; display: block; transform: translateY(1px); }
+.reglas { margin-top: 18px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 860px) { .reglas { grid-template-columns: minmax(0, 1fr); } }
+.regla { border-left: 3px solid var(--accent); padding: 4px 0 4px 14px; font-size: .95rem; }
+.regla b { display: block; font-family: var(--f-display); font-size: 1.05rem; margin-bottom: 2px; }
+
+.publicos { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 960px) { .publicos { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .publicos { grid-template-columns: minmax(0, 1fr); } }
+.publico { display: grid; gap: 8px; align-content: start; }
+.publico h3 { font-size: 1.1rem; }
+.publico p { color: var(--muted); font-size: .93rem; }
+.publico .riesgo { font-size: .85rem; color: var(--ink); }
+.publico .riesgo span { font-family: var(--f-mono); font-size: .72rem; color: var(--accent); text-transform: uppercase; letter-spacing: .05em; display: block; }
+.btn-perfil { justify-self: start; }
+
+.contacto { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+@media (max-width: 760px) { .contacto { grid-template-columns: minmax(0, 1fr); } }
+.dato { display: grid; gap: 2px; padding-block: 10px; border-bottom: 1px solid var(--line); }
+.dato span { font-family: var(--f-mono); font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.pendiente { color: var(--warn); font-style: italic; }
+
+footer { border-top: 1px solid var(--line); padding-block: 22px; font-size: .85rem; color: var(--muted); }
+footer .wrap { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <a class="marca" href="#analizar"><span class="marca-icono" aria-hidden="true"><i></i><i></i><i></i></span>Detector de riesgos comunicacionales</a>
+    <nav class="nav" aria-label="Secciones">
+      <a href="#analizar">Analizar</a>
+      <a href="#criterios">Cómo evalúa</a>
+      <a href="#publicos">Para quién es</a>
+      <a href="#contacto">Contacto</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="wrap intro" id="analizar">
+    <span class="eyebrow">Revisión previa a la publicación · beta</span>
+    <h1>Revisá tu texto antes de que lo lea todo el mundo.</h1>
+    <p>Pegá lo que vas a publicar. La herramienta marca con un semáforo si dice algo que no podés sostener, si discrimina a alguien (aunque sea sin querer), si expone datos personales o si puede terminar en polémica o en una funa, y te propone cambios que mantienen tu mensaje. La decisión de publicar sigue siendo tuya.</p>
+  </section>
+
+  <div class="wrap herramienta">
+    <!-- Columna 1: entrada -->
+    <form class="panel" id="form" novalidate>
+      <div class="panel-cabecera">
+        <h2>Tu contenido</h2>
+        <span class="modo" id="modo" data-motor="ejemplos">Comprobando conexión…</span>
+      </div>
+
+      <fieldset class="paso">
+        <legend><span class="paso-num">1</span>¿Qué vas a publicar?</legend>
+        <div class="opciones" id="op-tipo"></div>
+      </fieldset>
+
+      <div class="paso">
+        <label for="perfil"><span class="paso-num">2</span>¿Quién publica?</label>
+        <select id="perfil" name="perfil"></select>
+      </div>
+
+      <fieldset class="paso">
+        <legend><span class="paso-num">3</span>¿Qué querés cuidar más? <span class="opcional">Podés elegir varias</span></legend>
+        <div class="opciones" id="op-objetivo"></div>
+        <p class="ayuda">Si no elegís ninguna, se revisa todo por igual.</p>
+      </fieldset>
+
+      <div class="paso">
+        <label for="texto"><span class="paso-num">4</span>Pegá el texto</label>
+        <textarea id="texto" name="texto" spellcheck="true" placeholder="Pegá acá el post, el mail o la pieza publicitaria que estás por publicar."></textarea>
+        <div class="contador" id="contador">0 / 6000</div>
+        <div class="ejemplos" id="ejemplos"><span>Textos de prueba:</span></div>
+      </div>
+
+      <div class="paso" id="paso-codigo" hidden>
+        <label for="codigo">Código de acceso a la beta</label>
+        <input type="password" id="codigo" name="codigo" autocomplete="off">
+      </div>
+
+      <div class="acciones">
+        <button class="btn" type="submit" id="btn-analizar">Analizar texto</button>
+        <button class="btn-sec" type="button" id="btn-cancelar" hidden>Cancelar</button>
+        <p class="aviso" id="aviso" role="status"></p>
+      </div>
+    </form>
+
+    <!-- Columna 2: diagnóstico -->
+    <section class="panel" id="resultado" aria-live="polite" aria-label="Diagnóstico">
+      <div class="veredicto" id="veredicto">
+        <div class="semaforo" id="semaforo" aria-hidden="true"><span class="l-rojo"></span><span class="l-amarillo"></span><span class="l-verde"></span></div>
+        <div>
+          <h3 id="v-titulo">Sin analizar</h3>
+          <p id="v-texto">Elegí un texto de prueba o pegá el tuyo.</p>
+          <span class="etiqueta" id="v-etiqueta" hidden></span>
+        </div>
+      </div>
+      <div id="detalle"></div>
+    </section>
+  </div>
+
+  <!-- Cómo evalúa -->
+  <section class="seccion" id="criterios">
+    <div class="wrap">
+      <h2>Cómo evalúa</h2>
+      <p>Cada texto se revisa con la misma matriz: cuatro categorías, cada una con sus criterios codificados, y tres niveles. Cada riesgo marcado indica el código del criterio que lo justifica, para que puedas ver por qué aparece.</p>
+      <div class="matriz" id="matriz"></div>
+      <div class="reglas">
+        <div class="regla"><b>El semáforo general lo pone la categoría más grave</b>Si una categoría queda en rojo, el texto queda en rojo. Esa regla es fija: no la decide la IA.</div>
+        <div class="regla"><b>Las sugerencias no cambian tu mensaje</b>Cada propuesta reemplaza solo el fragmento con riesgo y mantiene la intención, los datos, el tono y el llamado a la acción. Tu texto original no se modifica.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Para quién -->
+  <section class="seccion" id="publicos">
+    <div class="wrap">
+      <h2>Para quién es</h2>
+      <p>Para quienes publican seguido y no siempre tienen a alguien que revise antes. El análisis se adapta a quién publica y al tipo de contenido.</p>
+      <div class="publicos" id="lista-publicos"></div>
+    </div>
+  </section>
+
+  <!-- Contacto -->
+  <section class="seccion" id="contacto">
+    <div class="wrap contacto">
+      <div>
+        <h2>Contacto</h2>
+        <p style="color:var(--muted);margin-top:8px;max-width:52ch">Esta es una versión beta en prueba. Si querés usarla con tu equipo o contarnos qué te sirvió y qué no, escribinos.</p>
+      </div>
+      <div>
+        <div class="dato"><span>Correo</span><b class="pendiente">correo del equipo (a completar)</b></div>
+        <div class="dato"><span>Equipo</span>Camila Curcio y Luciana Ramón</div>
+        <div class="dato"><span>Proyecto</span>Laboratorio de IA en Comunicación · UCU · 2026</div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Detector de riesgos comunicacionales · beta</span>
+    <span id="pie-version"></span>
+  </div>
+</footer>
+
+<script src="prompt.js"></script>
+<script>
+(function () {
+  "use strict";
+  var D = window.Detector;
+
+  // ── Textos de calibración (ficticios) con su resultado de referencia ──────
+  var EJEMPLOS = [
+    {
+      id: "mail",
+      etiqueta: "Mail institucional",
+      tipo: "mail", perfil: "institucion", objetivo: [],
+      texto: "Asunto: Recordatorio – Becas de apoyo económico, 2.º semestre\n\nEstimados alumnos:\n\nLes recordamos que el plazo para postularse a las becas de apoyo económico vence este viernes. Este año el equipo de Bienestar trabajó como negro para conseguir más cupos. El 100% de los estudiantes que presentaron la documentación completa el semestre pasado obtuvo la beca, así que no hay excusas para no postularse.\n\nLes compartimos el caso de Martina Rodríguez (CI 4.567.890-1), de 3.er año de Comunicación, que gracias a la beca pudo seguir estudiando mientras hacía su tratamiento por depresión. Pueden escribirle a martina.rodriguez@example.com para que les cuente su experiencia.\n\nPara postularse deben presentar los recibos de sueldo de ambos padres y el formulario firmado.\n\nSaludos,\nCoordinación de Bienestar Estudiantil",
+      resultado: {
+        mensaje_central: "Bienestar Estudiantil recuerda que la postulación a las becas de apoyo económico cierra este viernes, cuenta que este año hay más cupos y anima a presentarse con la documentación completa.",
+        categorias: [
+          { id: "veracidad", nivel: "amarillo", resumen: "Usa una cifra absoluta sin fuente que puede leerse como si la beca estuviera asegurada.", hallazgos: [
+            { fragmento: "El 100% de los estudiantes que presentaron la documentación completa el semestre pasado obtuvo la beca", criterio: "V2", problema: "Cifra absoluta sin fuente ni aclaración de que los cupos pueden cambiar. Si este semestre no se repite, se lee como una promesa incumplida." }
+          ] },
+          { id: "inclusion", nivel: "rojo", resumen: "Usa una expresión de origen racista (seguramente sin intención) y da por hecho un tipo de estudiante y de familia.", hallazgos: [
+            { fragmento: "trabajó como negro", criterio: "I5", problema: "Expresión de uso cotidiano con origen racista: asocia a las personas negras con el trabajo esclavo. Aunque se diga sin mala intención, puede herir a estudiantes afrodescendientes." },
+            { fragmento: "Estimados alumnos", criterio: "I3", problema: "Masculino genérico en un correo para todo el estudiantado; hay alternativas simples." },
+            { fragmento: "no hay excusas para no postularse", criterio: "I2", problema: "Culpabiliza a quien no se postula, cuando hay estudiantes que no pueden reunir la documentación." },
+            { fragmento: "los recibos de sueldo de ambos padres", criterio: "I3", problema: "Supone una familia con dos padres con empleo formal. Deja afuera otras configuraciones familiares e ingresos informales." }
+          ] },
+          { id: "privacidad", nivel: "rojo", resumen: "Expone la identidad, la cédula, el correo y un dato de salud de una estudiante en un envío masivo.", hallazgos: [
+            { fragmento: "Martina Rodríguez (CI 4.567.890-1)", criterio: "P1", problema: "Nombre completo con número de cédula: un dato identificatorio que no debe circular en un correo masivo." },
+            { fragmento: "mientras hacía su tratamiento por depresión", criterio: "P2", problema: "Dato de salud de una persona identificable. Es un dato sensible según la Ley 18.331 y necesita consentimiento expreso." },
+            { fragmento: "martina.rodriguez@example.com", criterio: "P1", problema: "Comparte el correo personal de la estudiante con todo el estudiantado." }
+          ] },
+          { id: "polemica", nivel: "amarillo", resumen: "Si alguien reenvía o captura el correo, la expresión racista y la exposición de la estudiante pueden generar críticas públicas a la institución.", hallazgos: [
+            { fragmento: "trabajó como negro", criterio: "R3", problema: "En una captura de pantalla, la frase circula sin contexto y la responsable pasa a ser la institución." },
+            { fragmento: "mientras hacía su tratamiento por depresión", criterio: "R1", problema: "Usar la salud mental de una estudiante como ejemplo motivador puede leerse como exposición y generar rechazo." }
+          ] }
+        ],
+        sugerencias: [
+          { categoria: "privacidad", tipo: "corrige_riesgo", fragmento_original: "Les compartimos el caso de Martina Rodríguez (CI 4.567.890-1), de 3.er año de Comunicación, que gracias a la beca pudo seguir estudiando mientras hacía su tratamiento por depresión.", reformulacion: "Les compartimos el caso de una estudiante de 3.er año de Comunicación que, gracias a la beca, pudo seguir estudiando en un momento personal difícil.", por_que: "Quita la cédula, el nombre y el dato de salud. Si la estudiante quiere contar su historia con nombre, se necesita su consentimiento por escrito.", que_se_conserva: "El testimonio de que la beca ayuda a seguir estudiando." },
+          { categoria: "privacidad", tipo: "corrige_riesgo", fragmento_original: "Pueden escribirle a martina.rodriguez@example.com para que les cuente su experiencia.", reformulacion: "Si quieren conocer experiencias de otras personas becadas, escriban a Bienestar Estudiantil y los ponemos en contacto con quienes aceptaron compartirlas.", por_que: "No difunde el correo personal de nadie y el contacto pasa por la institución.", que_se_conserva: "La invitación a conocer experiencias de primera mano." },
+          { categoria: "veracidad", tipo: "corrige_riesgo", fragmento_original: "El 100% de los estudiantes que presentaron la documentación completa el semestre pasado obtuvo la beca, así que no hay excusas para no postularse.", reformulacion: "Según datos de Bienestar Estudiantil, el semestre pasado todas las postulaciones con la documentación completa obtuvieron la beca. Los cupos pueden variar, por eso les recomendamos postularse a tiempo.", por_que: "Atribuye la cifra, aclara que no es una garantía y cambia la presión por una recomendación.", que_se_conserva: "El dato que motiva a postularse y el llamado a hacerlo antes del viernes." },
+          { categoria: "inclusion", tipo: "corrige_riesgo", fragmento_original: "Este año el equipo de Bienestar trabajó como negro para conseguir más cupos.", reformulacion: "Este año el equipo de Bienestar trabajó intensamente para conseguir más cupos.", por_que: "Saca una expresión de origen racista que muchas personas usan sin darse cuenta.", que_se_conserva: "El reconocimiento al esfuerzo del equipo y la noticia de que hay más cupos." }
+        ]
+      }
+    },
+    {
+      id: "post",
+      etiqueta: "Post de emprendimiento",
+      tipo: "post", perfil: "emprendimiento", objetivo: ["inclusion", "polemica"],
+      texto: "🥐 ¡Llega el Día de la Madre a Miga! Porque nadie cocina como mamá, pero esta vez le damos una mano 😉\n\nRegalale a la reina de la casa nuestra caja dulce: somos la única pastelería 100% natural de Montevideo, sin químicos.\n\nIdeal para que mamá descanse de la cocina por un día. Ojo: no apta para gente a dieta 🤭\n\nPedidos por DM hasta el jueves.\n#diadelamadre #pasteleriaartesanal #montevideo",
+      resultado: {
+        mensaje_central: "Miga promociona su caja dulce como regalo para el Día de la Madre y toma pedidos por mensaje directo hasta el jueves.",
+        categorias: [
+          { id: "veracidad", nivel: "amarillo", resumen: "Hay afirmaciones absolutas que el emprendimiento no puede comprobar.", hallazgos: [
+            { fragmento: "somos la única pastelería 100% natural de Montevideo", criterio: "V2", problema: "«La única» es imposible de verificar y «100 % natural» no tiene certificación que lo respalde." },
+            { fragmento: "sin químicos", criterio: "V2", problema: "Expresión imprecisa: todos los alimentos tienen componentes químicos. Es mejor decir qué no se usa." }
+          ] },
+          { id: "inclusion", nivel: "amarillo", resumen: "Refuerza la idea de que cocinar es tarea de las madres y hace humor con el cuerpo.", hallazgos: [
+            { fragmento: "nadie cocina como mamá", criterio: "I1", problema: "Asocia a las madres con la cocina como un rol natural." },
+            { fragmento: "Ideal para que mamá descanse de la cocina por un día", criterio: "I1", problema: "Da por hecho que la cocina es responsabilidad de la madre el resto del año." },
+            { fragmento: "no apta para gente a dieta 🤭", criterio: "I2", problema: "Humor a costa de quienes cuidan su alimentación o su cuerpo; puede herir a parte del público." },
+            { fragmento: "#diadelamadre #pasteleriaartesanal #montevideo", criterio: "I4", problema: "Hashtags sin mayúsculas internas: los lectores de pantalla no separan las palabras." }
+          ] },
+          { id: "privacidad", nivel: "verde", resumen: "No expone datos personales ni información reservada.", hallazgos: [] },
+          { id: "polemica", nivel: "verde", resumen: "Habla de una fecha comercial habitual sin tocar temas sensibles. Los estereotipos sobre las madres se evalúan en Inclusión.", hallazgos: [] }
+        ],
+        sugerencias: [
+          { categoria: "inclusion", tipo: "corrige_riesgo", fragmento_original: "Porque nadie cocina como mamá, pero esta vez le damos una mano 😉", reformulacion: "Porque esta vez le toca a ella que la mimen 😉", por_que: "Saca la asociación entre madre y cocina.", que_se_conserva: "El tono cercano, el guiño y la idea de agasajar." },
+          { categoria: "inclusion", tipo: "corrige_riesgo", fragmento_original: "Ojo: no apta para gente a dieta 🤭", reformulacion: "Ojo: no apta para quien no se resiste a lo dulce 🤭", por_que: "El chiste pasa a ser sobre lo tentador del producto, no sobre el cuerpo de nadie.", que_se_conserva: "El humor y el emoji del original." },
+          { categoria: "veracidad", tipo: "corrige_riesgo", fragmento_original: "somos la única pastelería 100% natural de Montevideo, sin químicos", reformulacion: "la hacemos a mano con ingredientes naturales, sin conservantes ni colorantes artificiales", por_que: "Describe lo que el emprendimiento sí puede demostrar en lugar de un superlativo.", que_se_conserva: "El diferencial de producto natural y artesanal." },
+          { categoria: "inclusion", tipo: "mejora_opcional", fragmento_original: "#diadelamadre #pasteleriaartesanal #montevideo", reformulacion: "#DiaDeLaMadre #PasteleriaArtesanal #Montevideo", por_que: "Las mayúsculas internas permiten que los lectores de pantalla lean bien cada palabra.", que_se_conserva: "Los mismos hashtags." }
+        ]
+      }
+    },
+    {
+      id: "publicidad",
+      etiqueta: "Publicidad de influencer",
+      tipo: "publicidad", perfil: "creador", objetivo: ["veracidad"],
+      texto: "Probé NutriMax Detox durante 7 días y bajé 5 kilos sin hacer dieta ni ejercicio 🔥 Está clínicamente comprobado: elimina las toxinas y acelera tu metabolismo un 300%. Los médicos no quieren que sepas esto. Apto para todo el mundo, incluso embarazadas. Usá mi código VERANO20 y llevate el tuyo con 20% de descuento. ¡Quedan solo 50 unidades!",
+      resultado: {
+        mensaje_central: "Quien publica recomienda el suplemento NutriMax Detox a su comunidad y ofrece un código con 20 % de descuento para comprarlo.",
+        categorias: [
+          { id: "veracidad", nivel: "rojo", resumen: "Hace promesas de salud sin respaldo, recomienda el producto a embarazadas y no aclara que es publicidad.", hallazgos: [
+            { fragmento: "bajé 5 kilos sin hacer dieta ni ejercicio", criterio: "V3", problema: "Una experiencia personal presentada como resultado esperable en salud." },
+            { fragmento: "Está clínicamente comprobado: elimina las toxinas y acelera tu metabolismo un 300%", criterio: "V1", problema: "Afirma un respaldo científico sin citar ningún estudio, con una cifra inverosímil. Puede ser publicidad engañosa (Ley 17.250)." },
+            { fragmento: "Los médicos no quieren que sepas esto", criterio: "V1", problema: "Desacredita a profesionales de la salud sin pruebas; es un recurso típico de la desinformación." },
+            { fragmento: "incluso embarazadas", criterio: "V3", problema: "Recomienda un suplemento a un grupo de riesgo sin aval médico." },
+            { fragmento: "Usá mi código VERANO20", criterio: "V4", problema: "No aclara que es contenido patrocinado; la comunidad puede tomarlo como una opinión independiente." }
+          ] },
+          { id: "inclusion", nivel: "verde", resumen: "No se detectan expresiones excluyentes. Lo relativo al peso se evalúa en veracidad.", hallazgos: [] },
+          { id: "privacidad", nivel: "verde", resumen: "No expone datos personales ni información reservada.", hallazgos: [] },
+          { id: "polemica", nivel: "amarillo", resumen: "Desacreditar a los médicos puede generar respuestas públicas y denuncias de la publicación.", hallazgos: [
+            { fragmento: "Los médicos no quieren que sepas esto", criterio: "R4", problema: "Atacar a una profesión entera suele provocar respuestas de especialistas, comentarios negativos y reportes del contenido." }
+          ] }
+        ],
+        sugerencias: [
+          { categoria: "veracidad", tipo: "corrige_riesgo", fragmento_original: "bajé 5 kilos sin hacer dieta ni ejercicio 🔥", reformulacion: "te cuento cómo me fue 🔥", por_que: "Saca la promesa de resultado, que no se puede asegurar a otras personas.", que_se_conserva: "La recomendación en primera persona y el tono entusiasta." },
+          { categoria: "veracidad", tipo: "corrige_riesgo", fragmento_original: "Está clínicamente comprobado: elimina las toxinas y acelera tu metabolismo un 300%.", reformulacion: "Es un suplemento a base de [ingredientes del envase]; consultá con un profesional de la salud antes de tomarlo.", por_que: "Sin un estudio que lo respalde, la afirmación es engañosa. Describir la composición sí se puede verificar.", que_se_conserva: "La presentación del producto." },
+          { categoria: "veracidad", tipo: "corrige_riesgo", fragmento_original: "Apto para todo el mundo, incluso embarazadas.", reformulacion: "No se recomienda durante el embarazo o la lactancia sin indicación médica.", por_que: "La afirmación original pone en riesgo la salud de un grupo vulnerable; la nueva informa a quién va dirigido sin exponerlo.", que_se_conserva: "La información sobre quién puede consumirlo." },
+          { categoria: "veracidad", tipo: "corrige_riesgo", fragmento_original: "Usá mi código VERANO20", reformulacion: "#Publicidad Usá mi código VERANO20", por_que: "Identificar la colaboración paga cuida la confianza de la comunidad.", que_se_conserva: "El código y el descuento." }
+        ]
+      }
+    }
+  ];
+
+  var COPY_VEREDICTO = {
+    verde: { titulo: "Riesgo bajo", texto: "No encontramos riesgos importantes. Igual podés mirar las mejoras sugeridas." },
+    amarillo: { titulo: "Riesgo medio", texto: "Hay puntos para revisar antes de publicar." },
+    rojo: { titulo: "Riesgo alto", texto: "Conviene corregir los puntos en rojo antes de publicar." }
+  };
+  var NOMBRE_NIVEL = { verde: "Bajo", amarillo: "Medio", rojo: "Alto" };
+  var NOMBRE_CAT = { veracidad: "Veracidad", inclusion: "Inclusión", privacidad: "Privacidad", polemica: "Polémica" };
+
+  var PUBLICOS = [
+    { perfil: "emprendimiento", nombre: "Emprendimientos", texto: "Publican sin equipo de comunicación y necesitan una segunda lectura rápida antes de subir un post o una promo.", riesgo: "Superlativos y humor que se vuelve en contra." },
+    { perfil: "creador", nombre: "Creadores de contenido", texto: "Su capital es la confianza de su comunidad. Una promesa exagerada o una colaboración sin identificar la pone en juego.", riesgo: "Promesas de resultado y publicidad sin aclarar." },
+    { perfil: "institucion", nombre: "Instituciones", texto: "Hablan en nombre de muchas personas y manejan datos de quienes atienden. Un mail masivo puede exponer a terceros.", riesgo: "Datos personales y destinatarios implícitos." },
+    { perfil: "agencia", nombre: "Agencias y comunicadores", texto: "Revisan piezas para clientes con plazos cortos. La matriz les da un criterio común para justificar cada cambio.", riesgo: "Todas las categorías, con trazabilidad." }
+  ];
+
+  // ── Estado ────────────────────────────────────────────────────────────────
+  var estado = { motor: null, sample: null, requiereCodigo: false, ejemplo: null, analizado: "", ctl: null };
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); };
+
+  // ── Formulario ────────────────────────────────────────────────────────────
+  function opciones(contenedor, nombre, mapa, tipoInput) {
+    $(contenedor).innerHTML = Object.keys(mapa).map(function (k, i) {
+      var marcado = tipoInput === "radio" && i === 0 ? " checked" : "";
+      return '<label class="opcion"><input type="' + tipoInput + '" name="' + nombre + '" id="' + nombre + '-' + k + '" value="' + k + '"' + marcado + '><span>' + esc(mapa[k].nombre) + "</span></label>";
+    }).join("");
+  }
+  opciones("op-tipo", "tipo", D.TIPOS, "radio");
+  opciones("op-objetivo", "objetivo", D.OBJETIVOS, "checkbox");
+  $("perfil").innerHTML = Object.keys(D.PERFILES).map(function (k) { return '<option value="' + k + '">' + esc(D.PERFILES[k].nombre) + "</option>"; }).join("");
+
+  function valorRadio(nombre) { var el = document.querySelector('input[name="' + nombre + '"]:checked'); return el ? el.value : ""; }
+  function marcarRadio(nombre, valor) { var el = $(nombre + "-" + valor); if (el) el.checked = true; }
+  function objetivosElegidos() {
+    return Array.prototype.map.call(document.querySelectorAll('input[name="objetivo"]:checked'), function (el) { return el.value; });
+  }
+  function marcarObjetivos(lista) {
+    Array.prototype.forEach.call(document.querySelectorAll('input[name="objetivo"]'), function (el) { el.checked = lista.indexOf(el.value) !== -1; });
+  }
+  function entrada() { return { texto: $("texto").value, tipo: valorRadio("tipo"), perfil: $("perfil").value, objetivo: objetivosElegidos() }; }
+
+  function actualizarContador() {
+    var n = $("texto").value.length;
+    $("contador").textContent = n + " / " + D.MAX_CARACTERES;
+    $("contador").style.color = n > D.MAX_CARACTERES ? "var(--risk)" : "";
+    if (estado.analizado && $("texto").value !== estado.analizado) aviso("El diagnóstico corresponde a la versión anterior del texto.");
+  }
+  $("texto").addEventListener("input", function () {
+    estado.ejemplo = null;
+    pintarBotonesEjemplo();
+    actualizarContador();
+  });
+
+  $("ejemplos").insertAdjacentHTML("beforeend", EJEMPLOS.map(function (e) {
+    return '<button type="button" class="btn-link" data-ejemplo="' + e.id + '" aria-pressed="false">' + esc(e.etiqueta) + "</button>";
+  }).join(""));
+  $("ejemplos").addEventListener("click", function (ev) {
+    var b = ev.target.closest("[data-ejemplo]");
+    if (b) cargarEjemplo(b.getAttribute("data-ejemplo"));
+  });
+  function pintarBotonesEjemplo() {
+    Array.prototype.forEach.call(document.querySelectorAll("[data-ejemplo]"), function (b) {
+      b.setAttribute("aria-pressed", String(b.getAttribute("data-ejemplo") === estado.ejemplo));
+    });
+  }
+  function cargarEjemplo(id) {
+    var e = EJEMPLOS.filter(function (x) { return x.id === id; })[0];
+    if (!e) return;
+    cancelar();
+    estado.ejemplo = id;
+    $("texto").value = e.texto;
+    marcarRadio("tipo", e.tipo);
+    marcarObjetivos(e.objetivo);
+    $("perfil").value = e.perfil;
+    pintarBotonesEjemplo();
+    actualizarContador();
+    mostrar(D.normalizar(e.resultado), e.texto, "ejemplo");
+    aviso(estado.motor ? "Este es el resultado de referencia. Tocá «Analizar texto» para correrlo en vivo." : "");
+  }
+
+  // ── Motores: Claude (en claude.ai), servidor propio (Vercel) o solo ejemplos ──
+  function pintarModo() {
+    var m = $("modo");
+    if (estado.motor) { m.dataset.motor = "vivo"; m.textContent = "Análisis en vivo con IA"; }
+    else { m.dataset.motor = "ejemplos"; m.textContent = "Modo ejemplos"; }
+    $("paso-codigo").hidden = !(estado.motor === "servidor" && estado.requiereCodigo);
+  }
+  function detectarMotor() {
+    var intentos = [];
+    if (window.claude && typeof window.claude.use === "function") {
+      intentos.push(window.claude.use("sample").then(function (s) {
+        if (s && !estado.motor) { estado.sample = s; estado.motor = "claude"; }
+      }).catch(function () {}));
+    }
+    if (/^https?:$/.test(location.protocol)) {
+      intentos.push(fetch("api/analizar", { method: "GET" }).then(function (r) {
+        return r.ok ? r.json() : null;
+      }).then(function (j) {
+        if (j && j.ok && !estado.motor) { estado.motor = "servidor"; estado.requiereCodigo = Boolean(j.requiereCodigo); }
+      }).catch(function () {}));
+    }
+    Promise.all(intentos).then(pintarModo);
+  }
+
+  function pedirAnalisis(e, signal) {
+    if (estado.motor === "claude") {
+      return estado.sample.json(D.construirPrompt(e), { signal: signal });
+    }
+    return fetch("api/analizar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ texto: e.texto, tipo: e.tipo, perfil: e.perfil, objetivo: e.objetivo, codigo: $("codigo").value }),
+      signal: signal
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        if (!r.ok) throw { code: j.error || "upstream_error" };
+        return j;
+      });
+    }, function (err) {
+      throw { code: err && err.name === "AbortError" ? "cancelled" : "red" };
+    });
+  }
+
+  var ERRORES = {
+    not_granted: "Esta vista no tiene permiso para usar la IA. Podés seguir viendo los textos de prueba.",
+    sampling_disabled: "La IA no está disponible para esta cuenta. Podés seguir viendo los textos de prueba.",
+    rate_limited: "Se hicieron muchos análisis seguidos. Esperá un minuto y probá de nuevo.",
+    limite: "Se hicieron muchos análisis seguidos. Esperá un minuto y probá de nuevo.",
+    refused: "El modelo no analizó este texto. Probá con otro fragmento.",
+    rechazado: "El modelo no analizó este texto. Probá con otro fragmento.",
+    invalid_json: "La respuesta llegó incompleta. Tocá «Analizar texto» otra vez.",
+    codigo_invalido: "El código de acceso no es correcto. Revisalo en el documento de instrucciones.",
+    texto_largo: "El texto supera los 6000 caracteres. Analizalo por partes.",
+    session_expired: "Tu sesión venció. Volvé a iniciar sesión y probá de nuevo.",
+    red: "No se pudo conectar con el servidor. Revisá la conexión y probá de nuevo."
+  };
+  var SIN_PERMISO = ["not_granted", "sampling_disabled", "not_declared", "capability_disabled", "capability_removed"];
+
+  function aviso(txt, esError) { $("aviso").textContent = txt || ""; $("aviso").className = "aviso" + (esError ? " error" : ""); }
+
+  $("form").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var e = entrada();
+    if (!e.texto.trim()) { aviso("Pegá un texto o elegí uno de prueba.", true); $("texto").focus(); return; }
+    if (e.texto.length > D.MAX_CARACTERES) { aviso(ERRORES.texto_largo, true); return; }
+    if (!estado.motor) {
+      var ej = EJEMPLOS.filter(function (x) { return x.texto === e.texto; })[0];
+      if (ej) { mostrar(D.normalizar(ej.resultado), ej.texto, "ejemplo"); aviso(""); return; }
+      aviso("En esta versión sin conexión solo se ven los textos de prueba. Para analizar un texto propio, abrí la versión en línea.", true);
+      return;
+    }
+    analizar(e);
+  });
+
+  function analizar(e) {
+    cancelar();
+    var ctl = new AbortController();
+    estado.ctl = ctl;
+    cargando(true);
+    aviso("Analizando veracidad, inclusión, privacidad y riesgo de polémica. Puede tardar hasta un minuto.");
+    pedirAnalisis(e, ctl.signal).then(function (bruto) {
+      if (estado.ctl !== ctl) return;
+      mostrar(D.normalizar(bruto), e.texto, "vivo");
+      aviso("");
+    }).catch(function (err) {
+      if (estado.ctl !== ctl) return;
+      var code = (err && err.code) || "upstream_error";
+      if (code === "cancelled") { aviso("Análisis cancelado."); return; }
+      if (SIN_PERMISO.indexOf(code) !== -1 && estado.motor === "claude") { estado.motor = null; pintarModo(); }
+      if (code === "codigo_invalido") { $("paso-codigo").hidden = false; $("codigo").focus(); }
+      aviso(ERRORES[code] || "No se pudo completar el análisis. Probá de nuevo en un momento.", true);
+    }).then(function () {
+      if (estado.ctl === ctl) { estado.ctl = null; cargando(false); }
+    });
+  }
+  function cancelar() { if (estado.ctl) { estado.ctl.abort(); estado.ctl = null; cargando(false); } }
+  $("btn-cancelar").addEventListener("click", cancelar);
+
+  function cargando(si) {
+    $("btn-analizar").disabled = si;
+    $("btn-analizar").textContent = si ? "Analizando…" : "Analizar texto";
+    $("btn-cancelar").hidden = !si;
+    $("semaforo").classList.toggle("analizando", si);
+    if (si) $("semaforo").removeAttribute("data-nivel");
+    $("resultado").setAttribute("aria-busy", String(si));
+  }
+
+  // ── Diagnóstico ───────────────────────────────────────────────────────────
+  function ubicar(texto, fragmento) {
+    var i = texto.indexOf(fragmento);
+    if (i === -1) i = texto.toLowerCase().indexOf(fragmento.toLowerCase());
+    return i;
+  }
+  function marcarTexto(texto, categorias) {
+    var marcas = [], perdidos = 0;
+    categorias.forEach(function (c) {
+      c.hallazgos.forEach(function (h) {
+        var i = ubicar(texto, h.fragmento);
+        if (i === -1) { perdidos++; return; }
+        marcas.push({ ini: i, fin: i + h.fragmento.length, nivel: c.nivel === "verde" ? "amarillo" : c.nivel, codigo: h.criterio, problema: h.problema });
+      });
+    });
+    marcas.sort(function (a, b) { return a.ini - b.ini || b.fin - a.fin; });
+    var html = "", pos = 0;
+    marcas.forEach(function (m) {
+      if (m.ini < pos) return;
+      html += esc(texto.slice(pos, m.ini)) + '<mark class="m-' + m.nivel + '" title="' + esc(m.problema) + '">' + esc(texto.slice(m.ini, m.fin)) + "<sup>" + esc(m.codigo) + "</sup></mark>";
+      pos = m.fin;
+    });
+    return { html: html + esc(texto.slice(pos)), perdidos: perdidos };
+  }
+
+  function mostrar(r, texto, origen) {
+    estado.analizado = texto;
+    var v = COPY_VEREDICTO[r.global];
+    $("semaforo").dataset.nivel = r.global;
+    $("veredicto").dataset.nivel = r.global;
+    $("v-titulo").textContent = v.titulo;
+    $("v-texto").textContent = v.texto;
+    $("v-etiqueta").hidden = false;
+    $("v-etiqueta").textContent = origen === "ejemplo" ? "Resultado de referencia · texto de prueba" : "Análisis en vivo · matriz " + r.version_matriz;
+
+    var cats = r.categorias.map(function (c) {
+      var lista = c.hallazgos.length
+        ? '<ul class="hallazgos">' + c.hallazgos.map(function (h) {
+            return '<li class="hallazgo"><span><span class="codigo">' + esc(h.criterio) + "</span><q>" + esc(h.fragmento) + "</q></span><span>" + esc(h.problema) + "</span></li>";
+          }).join("") + "</ul>"
+        : '<p class="sin-hallazgos">Sin hallazgos en esta categoría.</p>';
+      return '<details class="cat" data-nivel="' + c.nivel + '"' + (c.nivel !== "verde" ? " open" : "") + ">" +
+        '<summary><span class="cat-franja"></span><span><span class="cat-nombre">' + esc(c.nombre) + '</span><br><span class="cat-resumen">' + esc(c.resumen) + "</span></span>" +
+        '<span class="chip chip-' + c.nivel + '">' + NOMBRE_NIVEL[c.nivel] + "</span></summary>" + lista + "</details>";
+    }).join("");
+
+    var marcado = marcarTexto(texto, r.categorias);
+
+    var sugs = r.sugerencias.map(function (s, i) {
+      return '<article class="sug">' +
+        '<div class="sug-cab"><span><strong>' + esc(NOMBRE_CAT[s.categoria] || s.categoria) + "</strong> · " + (s.tipo === "mejora_opcional" ? "mejora opcional" : "corrige un riesgo") + "</span>" +
+        '<button type="button" class="btn-sec" data-copiar="' + i + '">Copiar propuesta</button></div>' +
+        (s.fragmento_original ? '<div class="antes"><span>Antes</span><span>' + esc(s.fragmento_original) + "</span></div>" : "") +
+        '<div class="despues"><span>Propuesta</span><span id="sug-' + i + '">' + esc(s.reformulacion) + "</span></div>" +
+        '<div class="sug-razones"><span><b>Por qué:</b> ' + esc(s.por_que) + "</span><span><b>Se conserva:</b> " + esc(s.que_se_conserva) + "</span></div>" +
+        "</article>";
+    }).join("");
+    var notaSug = r.sugerencias.length < 2 ? '<p class="nota">El análisis devolvió menos de 2 sugerencias. Probá analizar de nuevo.</p>' : "";
+
+    $("detalle").innerHTML =
+      (r.mensaje_central ? '<div class="bloque"><span class="bloque-titulo">Mensaje central detectado</span><p class="mensaje-central">' + esc(r.mensaje_central) + "</p></div>" : "") +
+      '<div class="bloque"><span class="bloque-titulo">Por categoría</span><div class="cats">' + cats + "</div></div>" +
+      '<div class="bloque"><span class="bloque-titulo">Tu texto, marcado</span><div class="texto-marcado">' + marcado.html + "</div>" +
+        (marcado.perdidos ? '<p class="nota">' + marcado.perdidos + " fragmento(s) no coinciden exactamente con el texto y no se marcaron.</p>" : "") + "</div>" +
+      '<div class="bloque"><span class="bloque-titulo">Sugerencias de reformulación</span><div class="sugerencias">' + sugs + "</div>" + notaSug + "</div>" +
+      '<div class="bloque"><p class="descargo">Esto es una segunda lectura, no un veredicto. Tu texto original no se modificó: vos decidís qué cambiar y si publicás.</p></div>';
+    estado.sugerencias = r.sugerencias;
+  }
+
+  $("detalle").addEventListener("click", function (ev) {
+    var b = ev.target.closest("[data-copiar]");
+    if (!b) return;
+    var s = estado.sugerencias[Number(b.getAttribute("data-copiar"))];
+    var listo = function () { b.textContent = "Copiada"; setTimeout(function () { b.textContent = "Copiar propuesta"; }, 1800); };
+    try {
+      navigator.clipboard.writeText(s.reformulacion).then(listo, function () { seleccionar(b); });
+    } catch (e) { seleccionar(b); }
+  });
+  function seleccionar(b) {
+    var el = $("sug-" + b.getAttribute("data-copiar"));
+    var rango = document.createRange(); rango.selectNodeContents(el);
+    var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(rango);
+    b.textContent = "Seleccionada: copiala con Ctrl+C";
+  }
+
+  // ── Secciones informativas (salen de la misma matriz que usa el análisis) ──
+  var COLOR_NIVEL = { verde: "var(--ok)", amarillo: "var(--warn-light)", rojo: "var(--risk)" };
+  $("matriz").innerHTML = D.CATEGORIAS.map(function (c) {
+    return '<div class="matriz-col"><h3>' + esc(c.nombre) + "</h3><p>" + esc(c.pregunta) + '</p><ul class="criterios">' +
+      c.criterios.map(function (k) { return '<li><b><span class="codigo">' + k.codigo + "</span>" + esc(k.nombre) + "</b><small>" + esc(k.detalle) + "</small></li>"; }).join("") +
+      '</ul><div class="niveles">' + D.NIVELES.map(function (n) {
+        return '<div><i style="background:' + COLOR_NIVEL[n] + '"></i><span><b style="color:var(--ink)">' + NOMBRE_NIVEL[n] + ".</b> " + esc(c.niveles[n]) + "</span></div>";
+      }).join("") + "</div></div>";
+  }).join("");
+
+  $("lista-publicos").innerHTML = PUBLICOS.map(function (p) {
+    return '<div class="publico"><h3>' + esc(p.nombre) + "</h3><p>" + esc(p.texto) + '</p><p class="riesgo"><span>Riesgo frecuente</span>' + esc(p.riesgo) + '</p><button type="button" class="btn-sec btn-perfil" data-perfil="' + p.perfil + '">Analizar como ' + esc(p.nombre.toLowerCase()) + "</button></div>";
+  }).join("");
+  $("lista-publicos").addEventListener("click", function (ev) {
+    var b = ev.target.closest("[data-perfil]");
+    if (!b) return;
+    $("perfil").value = b.getAttribute("data-perfil");
+    $("analizar").scrollIntoView({ behavior: "smooth" });
+    $("texto").focus({ preventScroll: true });
+  });
+
+  $("pie-version").textContent = "Matriz de evaluación v" + D.VERSION_MATRIZ;
+
+  // Arranca con un texto de prueba cargado para que se vea qué hace la herramienta.
+  cargarEjemplo("mail");
+  detectarMotor();
+})();
+</script>

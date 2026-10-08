@@ -1,0 +1,9 @@
+{
+  "name": "detector-riesgos-comunicacionales",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Beta del Detector de riesgos comunicacionales (Lab IA en Comunicación, UCU)",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.132.1"
+  }
+}
