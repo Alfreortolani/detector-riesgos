@@ -589,6 +589,7 @@ footer .wrap { display: flex; justify-content: space-between; gap: 12px; flex-wr
     session_expired: "Tu sesión venció. Volvé a iniciar sesión y probá de nuevo.",
     red: "No se pudo conectar con el servidor. Revisá la conexión y probá de nuevo.",
     api: "El servicio de IA rechazó el pedido.",
+    saturado: "La IA de Google está muy pedida en este momento. Esperá unos segundos y tocá «Analizar texto» de nuevo.",
     sin_motor: "El servidor no tiene una clave de IA cargada. Revisá las variables de entorno en Vercel.",
     interno: "El servidor tuvo un error inesperado. Probá de nuevo en un momento."
   };
@@ -627,8 +628,15 @@ footer .wrap { display: flex; justify-content: space-between; gap: 12px; flex-wr
       if (code === "cancelled") { aviso("Análisis cancelado."); return; }
       if (SIN_PERMISO.indexOf(code) !== -1 && estado.motor === "claude") { estado.motor = null; pintarModo(); }
       if (code === "codigo_invalido") { $("paso-codigo").hidden = false; $("codigo").focus(); }
+      // Plan B: si era un texto de prueba, se muestra su resultado de referencia para que la demo no quede vacía.
+      var ref = EJEMPLOS.filter(function (x) { return x.texto === e.texto; })[0];
+      if (ref && ["codigo_invalido", "cancelled"].indexOf(code) === -1) {
+        mostrar(D.normalizar(ref.resultado), ref.texto, "ejemplo");
+        aviso("La IA no respondió en este momento, así que se muestra el resultado de referencia de este texto de prueba. Probá de nuevo en unos segundos para el análisis en vivo.");
+        return;
+      }
       var msg = ERRORES[code] || "No se pudo completar el análisis. Probá de nuevo en un momento.";
-      if (err && err.detalle) msg += " Detalle: " + err.detalle;
+      if (code === "api" && err && err.detalle) msg += " Detalle: " + err.detalle;
       aviso(msg, true);
     }).then(function () {
       if (estado.ctl === ctl) { estado.ctl = null; cargando(false); }
