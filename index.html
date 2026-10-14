@@ -86,8 +86,7 @@ p { margin: 0; }
 
 /* Herramienta */
 .herramienta { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 20px; align-items: start; padding-block: 8px 48px; }
-.herramienta > form { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); }
-@media (max-width: 900px) { .herramienta { grid-template-columns: minmax(0, 1fr); } .herramienta > form { position: static; } }
+@media (max-width: 900px) { .herramienta { grid-template-columns: minmax(0, 1fr); } }
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 22px; min-width: 0; }
 .panel-cabecera { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
 .panel-cabecera h2 { font-size: 1.15rem; }
@@ -109,7 +108,7 @@ select, textarea, input[type="text"], input[type="password"] {
   font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; width: 100%;
 }
 select { padding: 9px 10px; }
-textarea { padding: 12px; min-height: 230px; resize: vertical; line-height: 1.5; }
+textarea { padding: 12px; min-height: 170px; resize: vertical; line-height: 1.5; }
 input[type="password"] { padding: 9px 10px; }
 .opcional { font-weight: 400; color: var(--muted); font-size: .85rem; margin-left: 6px; }
 .ayuda { font-size: .85rem; color: var(--muted); }
@@ -238,7 +237,7 @@ footer .wrap { display: flex; justify-content: space-between; gap: 12px; flex-wr
       <a href="#analizar">Analizar</a>
       <a href="#criterios">Cómo evalúa</a>
       <a href="#publicos">Para quién es</a>
-      <a href="#contacto">Contacto</a>
+      <a href="#proyecto">Sobre el proyecto</a>
     </nav>
   </div>
 </header>
@@ -329,15 +328,14 @@ footer .wrap { display: flex; justify-content: space-between; gap: 12px; flex-wr
     </div>
   </section>
 
-  <!-- Contacto -->
-  <section class="seccion" id="contacto">
+  <!-- Sobre el proyecto -->
+  <section class="seccion" id="proyecto">
     <div class="wrap contacto">
       <div>
-        <h2>Contacto</h2>
-        <p style="color:var(--muted);margin-top:8px;max-width:52ch">Esta es una versión beta en prueba. Si querés usarla con tu equipo o contarnos qué te sirvió y qué no, escribinos.</p>
+        <h2>Sobre el proyecto</h2>
+        <p style="color:var(--muted);margin-top:8px;max-width:52ch">Esta es una versión beta en prueba, desarrollada como proyecto del Laboratorio de IA en Comunicación.</p>
       </div>
       <div>
-        <div class="dato"><span>Correo</span><b class="pendiente">correo del equipo (a completar)</b></div>
         <div class="dato"><span>Equipo</span>Camila Curcio y Luciana Ramón</div>
         <div class="dato"><span>Proyecto</span>Laboratorio de IA en Comunicación · UCU · 2026</div>
       </div>
@@ -570,7 +568,7 @@ footer .wrap { display: flex; justify-content: space-between; gap: 12px; flex-wr
       signal: signal
     }).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (j) {
-        if (!r.ok) throw { code: j.error || "upstream_error" };
+        if (!r.ok) throw { code: j.error || "upstream_error", detalle: j.detalle || "" };
         return j;
       });
     }, function (err) {
@@ -589,7 +587,10 @@ footer .wrap { display: flex; justify-content: space-between; gap: 12px; flex-wr
     codigo_invalido: "El código de acceso no es correcto. Revisalo en el documento de instrucciones.",
     texto_largo: "El texto supera los 6000 caracteres. Analizalo por partes.",
     session_expired: "Tu sesión venció. Volvé a iniciar sesión y probá de nuevo.",
-    red: "No se pudo conectar con el servidor. Revisá la conexión y probá de nuevo."
+    red: "No se pudo conectar con el servidor. Revisá la conexión y probá de nuevo.",
+    api: "El servicio de IA rechazó el pedido.",
+    sin_motor: "El servidor no tiene una clave de IA cargada. Revisá las variables de entorno en Vercel.",
+    interno: "El servidor tuvo un error inesperado. Probá de nuevo en un momento."
   };
   var SIN_PERMISO = ["not_granted", "sampling_disabled", "not_declared", "capability_disabled", "capability_removed"];
 
@@ -619,13 +620,16 @@ footer .wrap { display: flex; justify-content: space-between; gap: 12px; flex-wr
       if (estado.ctl !== ctl) return;
       mostrar(D.normalizar(bruto), e.texto, "vivo");
       aviso("");
+      if (window.matchMedia("(max-width: 900px)").matches) $("resultado").scrollIntoView({ behavior: "smooth", block: "start" });
     }).catch(function (err) {
       if (estado.ctl !== ctl) return;
       var code = (err && err.code) || "upstream_error";
       if (code === "cancelled") { aviso("Análisis cancelado."); return; }
       if (SIN_PERMISO.indexOf(code) !== -1 && estado.motor === "claude") { estado.motor = null; pintarModo(); }
       if (code === "codigo_invalido") { $("paso-codigo").hidden = false; $("codigo").focus(); }
-      aviso(ERRORES[code] || "No se pudo completar el análisis. Probá de nuevo en un momento.", true);
+      var msg = ERRORES[code] || "No se pudo completar el análisis. Probá de nuevo en un momento.";
+      if (err && err.detalle) msg += " Detalle: " + err.detalle;
+      aviso(msg, true);
     }).then(function () {
       if (estado.ctl === ctl) { estado.ctl = null; cargando(false); }
     });

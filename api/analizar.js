@@ -7,27 +7,60 @@
 // La clave vive en Vercel, nunca en la web.
 const Detector = require("../prompt.js");
 
-const GEMINI_MODELO = process.env.GEMINI_MODEL || "gemini-flash-latest";
+const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/";
+let geminiModelo = (process.env.GEMINI_MODEL || "gemini-flash-latest").trim();
 
 class ErrorMotor extends Error {
   constructor(codigo, detalle) {
     super(detalle || codigo);
     this.codigo = codigo;
+    this.detalle = detalle || "";
   }
 }
 
-async function analizarConGemini(prompt) {
-  const url = "https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(GEMINI_MODELO) + ":generateContent";
-  const r = await fetch(url, {
+// La clave a veces se pega con espacios, saltos de línea o comillas.
+function claveGemini() {
+  return String(process.env.GEMINI_API_KEY || "").trim().replace(/^["']|["']$/g, "");
+}
+
+function mensajeGoogle(cuerpo) {
+  try { return JSON.parse(cuerpo).error.message; } catch (e) { return cuerpo.slice(0, 200); }
+}
+
+// Si el modelo configurado no existe para esta clave, busca un modelo "flash" disponible.
+async function buscarModeloFlash() {
+  const r = await fetch(GEMINI_BASE + "models?pageSize=200", { headers: { "x-goog-api-key": claveGemini() } });
+  if (!r.ok) return null;
+  const { models = [] } = await r.json();
+  const usables = models.filter((m) => (m.supportedGenerationMethods || []).includes("generateContent"));
+  const flash = usables.filter((m) => /flash/.test(m.name) && !/lite|image|tts|live|preview|exp/.test(m.name));
+  const elegido = flash.sort((a, b) => b.name.localeCompare(a.name, "en", { numeric: true }))[0] || usables[0];
+  return elegido ? elegido.name.replace(/^models\//, "") : null;
+}
+
+async function llamarGemini(prompt, modelo) {
+  return fetch(GEMINI_BASE + "models/" + encodeURIComponent(modelo) + ":generateContent", {
     method: "POST",
-    headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY },
+    headers: { "Content-Type": "application/json", "x-goog-api-key": claveGemini() },
     body: JSON.stringify({
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       generationConfig: { responseMimeType: "application/json" },
     }),
   });
-  if (r.status === 429) throw new ErrorMotor("limite");
-  if (!r.ok) throw new ErrorMotor("api", "Gemini " + r.status + ": " + (await r.text()).slice(0, 300));
+}
+
+async function analizarConGemini(prompt) {
+  let r = await llamarGemini(prompt, geminiModelo);
+  if (r.status === 404) {
+    const alternativo = await buscarModeloFlash();
+    if (alternativo && alternativo !== geminiModelo) {
+      console.warn("Modelo " + geminiModelo + " no disponible; uso " + alternativo);
+      geminiModelo = alternativo;
+      r = await llamarGemini(prompt, geminiModelo);
+    }
+  }
+  if (r.status === 429) throw new ErrorMotor("limite", mensajeGoogle(await r.text()));
+  if (!r.ok) throw new ErrorMotor("api", "Gemini " + r.status + " (" + geminiModelo + "): " + mensajeGoogle(await r.text()));
   const datos = await r.json();
   const candidato = (datos.candidates || [])[0];
   if (!candidato || candidato.finishReason === "SAFETY") throw new ErrorMotor("rechazado");
@@ -64,7 +97,7 @@ async function analizarConClaude(prompt) {
 }
 
 function motorDisponible() {
-  if (process.env.GEMINI_API_KEY) return analizarConGemini;
+  if (claveGemini()) return analizarConGemini;
   if (process.env.ANTHROPIC_API_KEY) return analizarConClaude;
   return null;
 }
@@ -99,7 +132,11 @@ module.exports = async function handler(req, res) {
   } catch (e) {
     if (e instanceof ErrorMotor) {
       if (e.codigo === "api") console.error(e.message);
-      return res.status(ESTADO_HTTP[e.codigo] || 500).json({ error: e.codigo });
+      // El detalle es el mensaje del proveedor (nunca incluye la clave); ayuda a diagnosticar.
+      return res.status(ESTADO_HTTP[e.codigo] || 500).json({ error: e.codigo, detalle: e.detalle });
+    }
+    if (e instanceof SyntaxError || /JSON/.test(String(e && e.message))) {
+      return res.status(502).json({ error: "invalid_json" });
     }
     console.error(e);
     return res.status(500).json({ error: "interno" });
