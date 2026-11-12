@@ -9,7 +9,7 @@
 (function (root) {
   "use strict";
 
-  const VERSION_MATRIZ = "1.1 · beta";
+  const VERSION_MATRIZ = "1.2 · beta";
 
   // ── Matriz de evaluación ────────────────────────────────────────────────
   // Cada criterio tiene un código (V1, I3, P2…) para que cada hallazgo
@@ -161,6 +161,7 @@
       "1. Primero escribí en una oración el mensaje central: qué quiere comunicar el texto, a quién y qué le pide. Ese mensaje es lo que ninguna sugerencia puede cambiar.",
       "2. Para cada categoría, buscá fragmentos que activen algún criterio. Citá el fragmento EXACTAMENTE como aparece en el texto (mismas palabras, tildes, signos y emojis), lo más corto posible pero que se entienda. No inventes problemas: si una categoría no tiene hallazgos, su nivel es verde y la lista de hallazgos queda vacía.",
       "   Inclusión y Polémica se superponen: si un fragmento discrimina, registralo en Inclusión. En Polémica evaluá cuán probable es una reacción pública (críticas, capturas, funa) y repetí un fragmento solo si agrega un riesgo distinto.",
+      "   Si el texto empieza con «Descripción del post:» o tiene una parte «Texto dentro de la imagen:», viene de una publicación con imagen leída automáticamente: evaluá las dos partes como una sola pieza y no marques esos rótulos como hallazgos.",
       "   Las expresiones del criterio I5 casi siempre se usan sin mala intención: explicá de dónde viene la expresión y a quién puede herir, sin acusar a quien escribió.",
       "3. Asigná el nivel de cada categoría según la descripción de niveles de la matriz. Ante la duda entre dos niveles, elegí el más bajo y explicá la duda en el resumen. Reservá el rojo para riesgos con consecuencias concretas.",
       "4. Proponé entre 2 y 4 sugerencias de reformulación, empezando por los hallazgos de nivel rojo y después los amarillos. Cada sugerencia reemplaza SOLO el fragmento problemático y tiene que conservar:",

@@ -9,6 +9,16 @@
 | `api/analizar.js` | El servidor: recibe el texto, arma el prompt y le pide el análisis a Gemini (gratis) o a Claude. La clave queda en Vercel y nunca llega al navegador. |
 | `package.json`, `vercel.json` | Configuración para Vercel. |
 
+## Leer un link o una captura (nuevo en v1.2)
+En la versión publicada en Vercel, la casilla del paso 4 acepta tres cosas:
+- **Texto**, como antes.
+- **Un link** (por ejemplo, de un post de Instagram): al tocar «Analizar texto», el servidor lee la descripción del post y la imagen, y el modelo transcribe el texto que aparece dentro de la foto.
+- **Una captura de pantalla**: con el botón «Subir una captura», pegándola con Ctrl+V o arrastrándola a la casilla.
+
+Lo leído se pone en la casilla, separado en «Descripción del post» y «Texto dentro de la imagen», para que se pueda revisar o corregir antes de analizar.
+
+**Ojo con Instagram:** Instagram muchas veces no deja leer los posts desde un servidor (pide iniciar sesión). Cuando pasa, la web avisa y pide subir una captura, que funciona siempre. Los links directos a una imagen y las páginas web comunes sí se leen bien.
+
 ## La web elige sola cómo analizar
 1. **Dentro de claude.ai** (el link del artifact): usa la cuenta de Claude de quien la abre. La primera vez pide permiso.
 2. **Publicada en Vercel**: usa el servidor `api/analizar` con la clave gratuita de Gemini del equipo.

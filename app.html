@@ -4,7 +4,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Mono:wght@500&display=swap">
 <style>
-/* Layout: barra superior, herramienta en dos columnas (texto | diagnóstico) que se apilan en móvil, y abajo la matriz, públicos y contacto. */
+/* Layout: barra superior, herramienta en dos columnas (texto | diagnóstico) que se apilan en móvil, y abajo públicos y contacto. */
 :root {
   --bg: #f3f5f9;
   --surface: #ffffff;
@@ -79,7 +79,8 @@ p { margin: 0; }
 
 /* Herramienta */
 .herramienta { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 20px; align-items: start; padding-block: 8px 48px; }
-@media (max-width: 900px) { .herramienta { grid-template-columns: minmax(0, 1fr); } }
+.herramienta > form { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); }
+@media (max-width: 900px) { .herramienta { grid-template-columns: minmax(0, 1fr); } .herramienta > form { position: static; } }
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 22px; min-width: 0; }
 .panel-cabecera { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
 .panel-cabecera h2 { font-size: 1.15rem; }
@@ -101,12 +102,24 @@ select, textarea, input[type="text"], input[type="password"] {
   font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; width: 100%;
 }
 select { padding: 9px 10px; }
-textarea { padding: 12px; min-height: 170px; resize: vertical; line-height: 1.5; }
+textarea { padding: 12px; min-height: 230px; resize: vertical; line-height: 1.5; }
 input[type="password"] { padding: 9px 10px; }
 .opcional { font-weight: 400; color: var(--muted); font-size: .85rem; margin-left: 6px; }
 .ayuda { font-size: .85rem; color: var(--muted); }
 .contador { font-family: var(--f-mono); font-size: .75rem; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
 
+.bajo-texto { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.bajo-texto .contador { margin-left: auto; }
+.cargar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.cargar .btn-sec { display: inline-block; }
+.oculto { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.cargar:focus-within .btn-sec { outline: 2px solid var(--accent); outline-offset: 2px; }
+textarea.soltando { outline: 2px dashed var(--accent); outline-offset: 2px; }
+.adjunto { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; gap: 12px; align-items: center; background: var(--surface-2); border-radius: 8px; padding: 8px; }
+.adjunto img { width: 56px; height: 56px; object-fit: cover; border-radius: 6px; background: var(--line); }
+.adjunto img[hidden] + div { grid-column: 1 / 3; }
+.adjunto div { display: grid; gap: 2px; font-size: .88rem; min-width: 0; }
+.adjunto div span { color: var(--muted); overflow-wrap: anywhere; }
 .ejemplos { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: .88rem; color: var(--muted); }
 .btn-link { font: inherit; background: none; border: 0; padding: 4px 2px; color: var(--accent); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .btn-link[aria-pressed="true"] { color: var(--ink); text-decoration-thickness: 2px; font-weight: 700; }
@@ -186,22 +199,6 @@ mark sup { font-family: var(--f-mono); font-size: .62rem; margin-left: 2px; colo
 .seccion { padding-block: 48px; border-top: 1px solid var(--line); }
 .seccion > .wrap > h2 { font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 800; margin-bottom: 8px; }
 .seccion > .wrap > p { color: var(--muted); max-width: 64ch; margin-bottom: 24px; }
-.matriz { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
-@media (max-width: 1100px) { .matriz { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 640px) { .matriz { grid-template-columns: minmax(0, 1fr); } }
-.matriz-col { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; display: grid; gap: 12px; align-content: start; min-width: 0; }
-.matriz-col h3 { font-size: 1.2rem; }
-.matriz-col > p { color: var(--muted); font-size: .92rem; }
-.criterios { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; font-size: .9rem; }
-.criterios b { display: block; }
-.criterios small { color: var(--muted); font-size: .86rem; display: block; }
-.niveles { display: grid; gap: 6px; font-size: .85rem; padding-top: 10px; border-top: 1px solid var(--line); }
-.niveles div { display: grid; grid-template-columns: 12px minmax(0, 1fr); gap: 8px; align-items: baseline; color: var(--muted); }
-.niveles i { width: 10px; height: 10px; border-radius: 50%; display: block; transform: translateY(1px); }
-.reglas { margin-top: 18px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-@media (max-width: 860px) { .reglas { grid-template-columns: minmax(0, 1fr); } }
-.regla { border-left: 3px solid var(--accent); padding: 4px 0 4px 14px; font-size: .95rem; }
-.regla b { display: block; font-family: var(--f-display); font-size: 1.05rem; margin-bottom: 2px; }
 
 .publicos { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
 @media (max-width: 960px) { .publicos { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
@@ -228,9 +225,8 @@ footer .wrap { display: flex; justify-content: space-between; gap: 12px; flex-wr
     <a class="marca" href="#analizar"><span class="marca-icono" aria-hidden="true"><i></i><i></i><i></i></span>Detector de riesgos comunicacionales</a>
     <nav class="nav" aria-label="Secciones">
       <a href="#analizar">Analizar</a>
-      <a href="#criterios">Cómo evalúa</a>
       <a href="#publicos">Para quién es</a>
-      <a href="#proyecto">Sobre el proyecto</a>
+      <a href="#contacto">Contacto</a>
     </nav>
   </div>
 </header>
@@ -267,9 +263,21 @@ footer .wrap { display: flex; justify-content: space-between; gap: 12px; flex-wr
       </fieldset>
 
       <div class="paso">
-        <label for="texto"><span class="paso-num">4</span>Pegá el texto</label>
+        <label for="texto"><span class="paso-num">4</span><span id="paso4-titulo">Pegá el texto</span></label>
+        <div class="adjunto" id="adjunto" hidden>
+          <img id="adjunto-img" alt="">
+          <div><b id="adjunto-titulo">Captura leída</b><span id="adjunto-detalle">Revisá abajo el texto que leímos antes de analizar.</span></div>
+          <button type="button" class="btn-link" id="adjunto-quitar">Quitar</button>
+        </div>
         <textarea id="texto" name="texto" spellcheck="true" placeholder="Pegá acá el post, el mail o la pieza publicitaria que estás por publicar."></textarea>
-        <div class="contador" id="contador">0 / 6000</div>
+        <div class="bajo-texto">
+          <div class="cargar" id="cargar" hidden>
+            <label class="btn-sec" for="archivo">Subir una captura</label>
+            <input type="file" id="archivo" accept="image/png,image/jpeg,image/webp,image/gif" class="oculto">
+            <span class="ayuda" id="ayuda-link">También podés pegar un link o una captura (Ctrl+V) en la casilla.</span>
+          </div>
+          <div class="contador" id="contador">0 / 6000</div>
+        </div>
         <div class="ejemplos" id="ejemplos"><span>Textos de prueba:</span></div>
       </div>
 
@@ -299,19 +307,6 @@ footer .wrap { display: flex; justify-content: space-between; gap: 12px; flex-wr
     </section>
   </div>
 
-  <!-- Cómo evalúa -->
-  <section class="seccion" id="criterios">
-    <div class="wrap">
-      <h2>Cómo evalúa</h2>
-      <p>Cada texto se revisa con la misma matriz: cuatro categorías, cada una con sus criterios codificados, y tres niveles. Cada riesgo marcado indica el código del criterio que lo justifica, para que puedas ver por qué aparece.</p>
-      <div class="matriz" id="matriz"></div>
-      <div class="reglas">
-        <div class="regla"><b>El semáforo general lo pone la categoría más grave</b>Si una categoría queda en rojo, el texto queda en rojo. Esa regla es fija: no la decide la IA.</div>
-        <div class="regla"><b>Las sugerencias no cambian tu mensaje</b>Cada propuesta reemplaza solo el fragmento con riesgo y mantiene la intención, los datos, el tono y el llamado a la acción. Tu texto original no se modifica.</div>
-      </div>
-    </div>
-  </section>
-
   <!-- Para quién -->
   <section class="seccion" id="publicos">
     <div class="wrap">
@@ -321,14 +316,15 @@ footer .wrap { display: flex; justify-content: space-between; gap: 12px; flex-wr
     </div>
   </section>
 
-  <!-- Sobre el proyecto -->
-  <section class="seccion" id="proyecto">
+  <!-- Contacto -->
+  <section class="seccion" id="contacto">
     <div class="wrap contacto">
       <div>
-        <h2>Sobre el proyecto</h2>
-        <p style="color:var(--muted);margin-top:8px;max-width:52ch">Esta es una versión beta en prueba, desarrollada como proyecto del Laboratorio de IA en Comunicación.</p>
+        <h2>Contacto</h2>
+        <p style="color:var(--muted);margin-top:8px;max-width:52ch">Esta es una versión beta en prueba. Si querés usarla con tu equipo o contarnos qué te sirvió y qué no, escribinos.</p>
       </div>
       <div>
+        <div class="dato"><span>Correo</span><b class="pendiente">correo del equipo (a completar)</b></div>
         <div class="dato"><span>Equipo</span>Camila Curcio y Luciana Ramón</div>
         <div class="dato"><span>Proyecto</span>Laboratorio de IA en Comunicación · UCU · 2026</div>
       </div>
@@ -462,7 +458,8 @@ footer .wrap { display: flex; justify-content: space-between; gap: 12px; flex-wr
   ];
 
   // ── Estado ────────────────────────────────────────────────────────────────
-  var estado = { motor: null, sample: null, requiereCodigo: false, ejemplo: null, analizado: "", ctl: null };
+  var estado = { motor: null, sample: null, requiereCodigo: false, puedeExtraer: false, ejemplo: null, analizado: "", ctl: null };
+  var ES_LINK = /^https?:\/\/\S+$/i;
   var $ = function (id) { return document.getElementById(id); };
   var esc = function (s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); };
 
@@ -497,6 +494,9 @@ footer .wrap { display: flex; justify-content: space-between; gap: 12px; flex-wr
     estado.ejemplo = null;
     pintarBotonesEjemplo();
     actualizarContador();
+    if (estado.puedeExtraer && ES_LINK.test($("texto").value.trim())) {
+      aviso("Es un link: al tocar «Analizar texto» leemos la descripción del post y el texto de la imagen.");
+    }
   });
 
   $("ejemplos").insertAdjacentHTML("beforeend", EJEMPLOS.map(function (e) {
@@ -516,6 +516,7 @@ footer .wrap { display: flex; justify-content: space-between; gap: 12px; flex-wr
     if (!e) return;
     cancelar();
     estado.ejemplo = id;
+    $("adjunto").hidden = true;
     $("texto").value = e.texto;
     marcarRadio("tipo", e.tipo);
     marcarObjetivos(e.objetivo);
@@ -532,6 +533,10 @@ footer .wrap { display: flex; justify-content: space-between; gap: 12px; flex-wr
     if (estado.motor) { m.dataset.motor = "vivo"; m.textContent = "Análisis en vivo con IA"; }
     else { m.dataset.motor = "ejemplos"; m.textContent = "Modo ejemplos"; }
     $("paso-codigo").hidden = !(estado.motor === "servidor" && estado.requiereCodigo);
+    estado.puedeExtraer = estado.motor === "servidor" && estado.extraer;
+    $("cargar").hidden = !estado.puedeExtraer;
+    $("paso4-titulo").textContent = estado.puedeExtraer ? "Pegá el texto, un link o una captura" : "Pegá el texto";
+    if (estado.puedeExtraer) $("texto").placeholder = "Pegá acá el texto que vas a publicar, el link de un post (por ejemplo, de Instagram) o una captura de pantalla.";
   }
   function detectarMotor() {
     var intentos = [];
@@ -544,7 +549,7 @@ footer .wrap { display: flex; justify-content: space-between; gap: 12px; flex-wr
       intentos.push(fetch("api/analizar", { method: "GET" }).then(function (r) {
         return r.ok ? r.json() : null;
       }).then(function (j) {
-        if (j && j.ok && !estado.motor) { estado.motor = "servidor"; estado.requiereCodigo = Boolean(j.requiereCodigo); }
+        if (j && j.ok && !estado.motor) { estado.motor = "servidor"; estado.requiereCodigo = Boolean(j.requiereCodigo); estado.extraer = Boolean(j.extraer); }
       }).catch(function () {}));
     }
     Promise.all(intentos).then(pintarModo);
@@ -554,14 +559,19 @@ footer .wrap { display: flex; justify-content: space-between; gap: 12px; flex-wr
     if (estado.motor === "claude") {
       return estado.sample.json(D.construirPrompt(e), { signal: signal });
     }
+    return pedirAlServidor({ texto: e.texto, tipo: e.tipo, perfil: e.perfil, objetivo: e.objetivo }, signal);
+  }
+
+  function pedirAlServidor(datos, signal) {
+    datos.codigo = $("codigo").value;
     return fetch("api/analizar", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ texto: e.texto, tipo: e.tipo, perfil: e.perfil, objetivo: e.objetivo, codigo: $("codigo").value }),
+      body: JSON.stringify(datos),
       signal: signal
     }).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (j) {
-        if (!r.ok) throw { code: j.error || "upstream_error", detalle: j.detalle || "" };
+        if (!r.ok) throw { code: j.error || "upstream_error" };
         return j;
       });
     }, function (err) {
@@ -581,10 +591,11 @@ footer .wrap { display: flex; justify-content: space-between; gap: 12px; flex-wr
     texto_largo: "El texto supera los 6000 caracteres. Analizalo por partes.",
     session_expired: "Tu sesión venció. Volvé a iniciar sesión y probá de nuevo.",
     red: "No se pudo conectar con el servidor. Revisá la conexión y probá de nuevo.",
-    api: "El servicio de IA rechazó el pedido.",
-    saturado: "La IA de Google está muy pedida en este momento. Esperá unos segundos y tocá «Analizar texto» de nuevo.",
-    sin_motor: "El servidor no tiene una clave de IA cargada. Revisá las variables de entorno en Vercel.",
-    interno: "El servidor tuvo un error inesperado. Probá de nuevo en un momento."
+    link_invalido: "Ese link no es válido. Copiá la dirección completa, que empiece con https://.",
+    link_inaccesible: "No pudimos leer ese link. Instagram y otras redes a veces no dejan leer los posts desde afuera: sacale una captura de pantalla al post y subila.",
+    sin_texto: "No encontramos texto para analizar en esa imagen o link.",
+    imagen_invalida: "No pudimos abrir esa imagen. Probá con una captura en PNG o JPG.",
+    imagen_grande: "La imagen es muy pesada. Probá con una captura más chica."
   };
   var SIN_PERMISO = ["not_granted", "sampling_disabled", "not_declared", "capability_disabled", "capability_removed"];
 
@@ -594,6 +605,7 @@ footer .wrap { display: flex; justify-content: space-between; gap: 12px; flex-wr
     ev.preventDefault();
     var e = entrada();
     if (!e.texto.trim()) { aviso("Pegá un texto o elegí uno de prueba.", true); $("texto").focus(); return; }
+    if (estado.puedeExtraer && ES_LINK.test(e.texto.trim())) { leer({ accion: "extraer", url: e.texto.trim() }, true); return; }
     if (e.texto.length > D.MAX_CARACTERES) { aviso(ERRORES.texto_largo, true); return; }
     if (!estado.motor) {
       var ej = EJEMPLOS.filter(function (x) { return x.texto === e.texto; })[0];
@@ -614,23 +626,13 @@ footer .wrap { display: flex; justify-content: space-between; gap: 12px; flex-wr
       if (estado.ctl !== ctl) return;
       mostrar(D.normalizar(bruto), e.texto, "vivo");
       aviso("");
-      if (window.matchMedia("(max-width: 900px)").matches) $("resultado").scrollIntoView({ behavior: "smooth", block: "start" });
     }).catch(function (err) {
       if (estado.ctl !== ctl) return;
       var code = (err && err.code) || "upstream_error";
       if (code === "cancelled") { aviso("Análisis cancelado."); return; }
       if (SIN_PERMISO.indexOf(code) !== -1 && estado.motor === "claude") { estado.motor = null; pintarModo(); }
       if (code === "codigo_invalido") { $("paso-codigo").hidden = false; $("codigo").focus(); }
-      // Plan B: si era un texto de prueba, se muestra su resultado de referencia para que la demo no quede vacía.
-      var ref = EJEMPLOS.filter(function (x) { return x.texto === e.texto; })[0];
-      if (ref && ["codigo_invalido", "cancelled"].indexOf(code) === -1) {
-        mostrar(D.normalizar(ref.resultado), ref.texto, "ejemplo");
-        aviso("La IA no respondió en este momento, así que se muestra el resultado de referencia de este texto de prueba. Probá de nuevo en unos segundos para el análisis en vivo.");
-        return;
-      }
-      var msg = ERRORES[code] || "No se pudo completar el análisis. Probá de nuevo en un momento.";
-      if (code === "api" && err && err.detalle) msg += " Detalle: " + err.detalle;
-      aviso(msg, true);
+      aviso(ERRORES[code] || "No se pudo completar el análisis. Probá de nuevo en un momento.", true);
     }).then(function () {
       if (estado.ctl === ctl) { estado.ctl = null; cargando(false); }
     });
@@ -638,14 +640,124 @@ footer .wrap { display: flex; justify-content: space-between; gap: 12px; flex-wr
   function cancelar() { if (estado.ctl) { estado.ctl.abort(); estado.ctl = null; cargando(false); } }
   $("btn-cancelar").addEventListener("click", cancelar);
 
-  function cargando(si) {
+  function cargando(si, etiqueta) {
     $("btn-analizar").disabled = si;
-    $("btn-analizar").textContent = si ? "Analizando…" : "Analizar texto";
+    $("btn-analizar").textContent = si ? (etiqueta || "Analizando…") : "Analizar texto";
     $("btn-cancelar").hidden = !si;
     $("semaforo").classList.toggle("analizando", si);
     if (si) $("semaforo").removeAttribute("data-nivel");
     $("resultado").setAttribute("aria-busy", String(si));
   }
+
+  // ── Leer un link o una captura (solo con el servidor) ────────────────────
+  // Lo leído se pone en la casilla para que la persona lo vea y lo pueda corregir.
+  function armarTexto(d) {
+    var partes = [];
+    if (d.descripcion) partes.push("Descripción del post:\n" + d.descripcion);
+    if (d.texto_en_imagen) partes.push("Texto dentro de la imagen:\n" + d.texto_en_imagen);
+    return partes.join("\n\n");
+  }
+
+  function leer(datos, analizarDespues, vistaLocal) {
+    cancelar();
+    var ctl = new AbortController();
+    estado.ctl = ctl;
+    cargando(true, "Leyendo…");
+    aviso(datos.url ? "Leyendo el link: la descripción del post y el texto de la imagen…" : "Leyendo el texto de la captura…");
+    pedirAlServidor(datos, ctl.signal).then(function (d) {
+      if (estado.ctl !== ctl) return;
+      var texto = armarTexto(d);
+      var recortado = texto.length > D.MAX_CARACTERES;
+      $("texto").value = texto.slice(0, D.MAX_CARACTERES);
+      estado.ejemplo = null;
+      pintarBotonesEjemplo();
+      actualizarContador();
+      mostrarAdjunto(vistaLocal || d.vista_previa, datos.url ? "Post leído desde el link" : "Captura leída", datos.url || "");
+      estado.ctl = null;
+      cargando(false);
+      if (analizarDespues && !recortado) { analizar(entrada()); return; }
+      aviso(recortado
+        ? "El texto leído era muy largo y se recortó a " + D.MAX_CARACTERES + " caracteres. Revisalo y tocá «Analizar texto»."
+        : "Listo. Revisá el texto que leímos (podés corregirlo) y tocá «Analizar texto».");
+    }).catch(function (err) {
+      if (estado.ctl !== ctl) return;
+      estado.ctl = null;
+      cargando(false);
+      var code = (err && err.code) || "upstream_error";
+      if (code === "cancelled") { aviso("Lectura cancelada."); return; }
+      if (code === "codigo_invalido") { $("paso-codigo").hidden = false; $("codigo").focus(); }
+      aviso(ERRORES[code] || "No se pudo leer el contenido. Probá de nuevo en un momento.", true);
+    });
+  }
+
+  function mostrarAdjunto(src, titulo, detalle) {
+    $("adjunto").hidden = false;
+    $("adjunto-img").hidden = !src;
+    if (src) $("adjunto-img").src = src; else $("adjunto-img").removeAttribute("src");
+    $("adjunto-titulo").textContent = titulo;
+    $("adjunto-detalle").textContent = detalle || "Revisá abajo el texto que leímos antes de analizar.";
+  }
+  $("adjunto-quitar").addEventListener("click", function () {
+    $("adjunto").hidden = true;
+    $("adjunto-img").removeAttribute("src");
+    $("texto").value = "";
+    actualizarContador();
+    aviso("");
+    $("texto").focus();
+  });
+
+  // Achica la imagen en el navegador (máx. 1600 px) para que viaje rápido y entre en el límite del servidor.
+  function prepararImagen(archivo) {
+    return new Promise(function (ok, mal) {
+      if (!archivo || !/^image\//.test(archivo.type)) { mal({ code: "imagen_invalida" }); return; }
+      var url = URL.createObjectURL(archivo);
+      var img = new Image();
+      img.onload = function () {
+        var escala = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight));
+        var c = document.createElement("canvas");
+        c.width = Math.round(img.naturalWidth * escala);
+        c.height = Math.round(img.naturalHeight * escala);
+        var ctx = c.getContext("2d");
+        ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
+        ctx.drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        var dataUrl = c.toDataURL("image/jpeg", 0.85);
+        ok({ dataUrl: dataUrl, datos: dataUrl.split(",")[1] });
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); mal({ code: "imagen_invalida" }); };
+      img.src = url;
+    });
+  }
+  function leerArchivo(archivo) {
+    if (!estado.puedeExtraer) return;
+    prepararImagen(archivo).then(function (p) {
+      leer({ accion: "extraer", imagen: { mime: "image/jpeg", datos: p.datos } }, false, p.dataUrl);
+    }, function (err) { aviso(ERRORES[err.code], true); });
+  }
+  $("archivo").addEventListener("change", function () {
+    if (this.files && this.files[0]) leerArchivo(this.files[0]);
+    this.value = "";
+  });
+  $("texto").addEventListener("paste", function (ev) {
+    if (!estado.puedeExtraer || !ev.clipboardData) return;
+    var archivo = Array.prototype.filter.call(ev.clipboardData.files || [], function (f) { return /^image\//.test(f.type); })[0];
+    if (archivo) { ev.preventDefault(); leerArchivo(archivo); }
+  });
+  ["dragenter", "dragover"].forEach(function (tipo) {
+    $("texto").addEventListener(tipo, function (ev) {
+      if (!estado.puedeExtraer || !ev.dataTransfer || Array.prototype.indexOf.call(ev.dataTransfer.types, "Files") === -1) return;
+      ev.preventDefault();
+      $("texto").classList.add("soltando");
+    });
+  });
+  ["dragleave", "drop"].forEach(function (tipo) {
+    $("texto").addEventListener(tipo, function () { $("texto").classList.remove("soltando"); });
+  });
+  $("texto").addEventListener("drop", function (ev) {
+    if (!estado.puedeExtraer || !ev.dataTransfer || !ev.dataTransfer.files.length) return;
+    ev.preventDefault();
+    leerArchivo(ev.dataTransfer.files[0]);
+  });
 
   // ── Diagnóstico ───────────────────────────────────────────────────────────
   function ubicar(texto, fragmento) {
@@ -732,16 +844,7 @@ footer .wrap { display: flex; justify-content: space-between; gap: 12px; flex-wr
     b.textContent = "Seleccionada: copiala con Ctrl+C";
   }
 
-  // ── Secciones informativas (salen de la misma matriz que usa el análisis) ──
-  var COLOR_NIVEL = { verde: "var(--ok)", amarillo: "var(--warn-light)", rojo: "var(--risk)" };
-  $("matriz").innerHTML = D.CATEGORIAS.map(function (c) {
-    return '<div class="matriz-col"><h3>' + esc(c.nombre) + "</h3><p>" + esc(c.pregunta) + '</p><ul class="criterios">' +
-      c.criterios.map(function (k) { return '<li><b><span class="codigo">' + k.codigo + "</span>" + esc(k.nombre) + "</b><small>" + esc(k.detalle) + "</small></li>"; }).join("") +
-      '</ul><div class="niveles">' + D.NIVELES.map(function (n) {
-        return '<div><i style="background:' + COLOR_NIVEL[n] + '"></i><span><b style="color:var(--ink)">' + NOMBRE_NIVEL[n] + ".</b> " + esc(c.niveles[n]) + "</span></div>";
-      }).join("") + "</div></div>";
-  }).join("");
-
+  // ── Sección "Para quién es" ──
   $("lista-publicos").innerHTML = PUBLICOS.map(function (p) {
     return '<div class="publico"><h3>' + esc(p.nombre) + "</h3><p>" + esc(p.texto) + '</p><p class="riesgo"><span>Riesgo frecuente</span>' + esc(p.riesgo) + '</p><button type="button" class="btn-sec btn-perfil" data-perfil="' + p.perfil + '">Analizar como ' + esc(p.nombre.toLowerCase()) + "</button></div>";
   }).join("");
