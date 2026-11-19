@@ -24,27 +24,60 @@ class ErrorMotor extends Error {
 // ── Motores ────────────────────────────────────────────────────────────────
 // "partes" es una lista de { texto } o { imagen: { mime, datos (base64) } }.
 
+// Si un modelo está saturado (503), sin cupo (429) o no existe (404), se prueba el siguiente.
+const GEMINI_MODELOS = [...new Set([GEMINI_MODELO, "gemini-flash-latest", "gemini-flash-lite-latest", "gemini-2.5-flash", "gemini-2.5-flash-lite"])];
+const espera = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function pedirAGemini(modelo, partes) {
+  const url = "https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(modelo) + ":generateContent";
+  const ctl = new AbortController();
+  const reloj = setTimeout(() => ctl.abort(), 45000);
+  try {
+    return await fetch(url, {
+      method: "POST",
+      signal: ctl.signal,
+      headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY },
+      body: JSON.stringify({
+        contents: [{
+          role: "user",
+          parts: partes.map((p) => (p.imagen ? { inline_data: { mime_type: p.imagen.mime, data: p.imagen.datos } } : { text: p.texto })),
+        }],
+        generationConfig: { responseMimeType: "application/json" },
+      }),
+    });
+  } catch (e) {
+    return { ok: false, status: 504, text: async () => "timeout " + modelo };
+  } finally {
+    clearTimeout(reloj);
+  }
+}
+
 async function preguntarAGemini(partes) {
-  const url = "https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(GEMINI_MODELO) + ":generateContent";
-  const r = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY },
-    body: JSON.stringify({
-      contents: [{
-        role: "user",
-        parts: partes.map((p) => (p.imagen ? { inline_data: { mime_type: p.imagen.mime, data: p.imagen.datos } } : { text: p.texto })),
-      }],
-      generationConfig: { responseMimeType: "application/json" },
-    }),
-  });
-  if (r.status === 429) throw new ErrorMotor("limite");
-  if (!r.ok) throw new ErrorMotor("api", "Gemini " + r.status + ": " + (await r.text()).slice(0, 300));
-  const datos = await r.json();
-  const candidato = (datos.candidates || [])[0];
-  if (!candidato || candidato.finishReason === "SAFETY") throw new ErrorMotor("rechazado");
-  return (candidato.content && candidato.content.parts ? candidato.content.parts : [])
-    .map((p) => p.text || "")
-    .join("");
+  const inicio = Date.now();
+  let ultimo = null, todosSinCupo = true;
+  for (const modelo of GEMINI_MODELOS) {
+    for (let intento = 0; intento < 2; intento++) {
+      if (Date.now() - inicio > 95000) break;
+      const r = await pedirAGemini(modelo, partes);
+      if (r.ok) {
+        const datos = await r.json();
+        const candidato = (datos.candidates || [])[0];
+        if (!candidato || candidato.finishReason === "SAFETY") throw new ErrorMotor("rechazado");
+        return (candidato.content && candidato.content.parts ? candidato.content.parts : [])
+          .map((p) => p.text || "")
+          .join("");
+      }
+      ultimo = "Gemini " + r.status + " (" + modelo + "): " + (await r.text()).slice(0, 200);
+      console.error(ultimo);
+      if (r.status !== 429) todosSinCupo = false;
+      if (r.status === 503 || r.status === 500 || r.status === 504) { if (intento === 0) { await espera(1500); continue; } }
+      break; // 404, 429 u otro: pasar al siguiente modelo
+    }
+    if (ultimo && /^Gemini (400|401|403) /.test(ultimo)) break; // clave inválida: no tiene sentido seguir
+  }
+  if (todosSinCupo) throw new ErrorMotor("limite");
+  if (ultimo && /^Gemini (500|503|504) /.test(ultimo)) throw new ErrorMotor("saturado", ultimo);
+  throw new ErrorMotor("api", ultimo || "Gemini sin respuesta");
 }
 
 async function preguntarAClaude(partes) {
@@ -253,7 +286,7 @@ async function extraer(preguntar, body) {
 // ── Handler ────────────────────────────────────────────────────────────────
 
 const ESTADO_HTTP = {
-  limite: 429, rechazado: 422, api: 502,
+  limite: 429, rechazado: 422, api: 502, saturado: 503,
   link_invalido: 400, link_inaccesible: 422, sin_texto: 422, imagen_invalida: 400, imagen_grande: 413,
 };
 
@@ -291,7 +324,7 @@ module.exports = async function handler(req, res) {
       if (e.codigo === "api" || e.codigo === "link_inaccesible") console.error(e.message);
       const respuesta = { error: e.codigo };
       // Para diagnosticar: el motivo que dio el proveedor (nunca incluye la clave).
-      if (e.codigo === "api") respuesta.detalle = String(e.message).slice(0, 300);
+      if (e.codigo === "api" || e.codigo === "saturado") respuesta.detalle = String(e.message).slice(0, 300);
       return res.status(ESTADO_HTTP[e.codigo] || 500).json(respuesta);
     }
     console.error(e);
