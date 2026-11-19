@@ -165,8 +165,14 @@ function decodificarEntidades(s) {
     .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(parseInt(d, 10)))
     .replace(/&quot;/g, '"').replace(/&apos;|&#39;/g, "'")
     .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&nbsp;/g, " ")
+    .replace(/&([a-z]+);/gi, (m, n) => (n in ENTIDADES ? ENTIDADES[n] : m))
     .replace(/&amp;/g, "&");
 }
+const ENTIDADES = {
+  aacute: "á", eacute: "é", iacute: "í", oacute: "ó", uacute: "ú", Aacute: "Á", Eacute: "É", Iacute: "Í", Oacute: "Ó", Uacute: "Ú",
+  ntilde: "ñ", Ntilde: "Ñ", uuml: "ü", Uuml: "Ü", iexcl: "¡", iquest: "¿", laquo: "«", raquo: "»", ordm: "º", ordf: "ª",
+  ldquo: "“", rdquo: "”", lsquo: "‘", rsquo: "’", hellip: "…", ndash: "–", mdash: "—", middot: "·", deg: "°", euro: "€", copy: "©", reg: "®",
+};
 
 // Lee las etiquetas <meta property="og:..."> que usan las redes para las vistas previas.
 function leerMetas(html) {
@@ -192,9 +198,49 @@ function limpiarDescripcion(desc) {
   return (m ? m[1] : s).trim();
 }
 
+// Instagram pide iniciar sesión en la página del post, pero suele dejar abierta la versión
+// "para incrustar" (embed), que trae la descripción y la imagen.
+function quitarEtiquetas(html) {
+  return decodificarEntidades(String(html)
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(p|div)>/gi, "\n")
+    .replace(/<[^>]+>/g, ""))
+    .replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+
+async function extraerDeInstagram(url) {
+  const m = url.pathname.match(/^\/(?:[^/]+\/)?(p|reel|reels|tv)\/([A-Za-z0-9_-]+)/);
+  if (!m) return null;
+  const tipo = m[1] === "reels" ? "reel" : m[1];
+  let pagina;
+  try { pagina = await descargar("https://www.instagram.com/" + tipo + "/" + m[2] + "/embed/captioned/", MAX_IMAGEN_BYTES); }
+  catch (e) { return null; }
+  const html = pagina.buf.toString("utf8");
+  let descripcion = "";
+  const cap = html.match(/<div class="Caption"[^>]*>([\s\S]*?)<div class="CaptionComments"/i) || html.match(/<div class="Caption"[^>]*>([\s\S]*?)<\/div>\s*<\/div>/i);
+  if (cap) {
+    descripcion = quitarEtiquetas(cap[1].replace(/<a class="CaptionUsername"[\s\S]*?<\/a>/i, ""));
+  }
+  let imagen = null;
+  const img = html.match(/<img[^>]+class="EmbeddedMediaImage"[^>]+src="([^"]+)"/i) || html.match(/<img[^>]+src="([^"]+)"[^>]+class="EmbeddedMediaImage"/i);
+  const urlImg = img ? urlPermitida(decodificarEntidades(img[1])) : null;
+  if (urlImg) {
+    try {
+      const r = await descargar(urlImg.href, MAX_IMAGEN_BYTES);
+      if (TIPOS_IMAGEN.includes(r.tipo)) imagen = { mime: r.tipo, buf: r.buf };
+    } catch (e) { /* seguimos sin imagen */ }
+  }
+  if (!descripcion && !imagen) return null;
+  return { descripcion, imagen, fuente: url.href };
+}
+
 async function extraerDeLink(textoUrl) {
   const url = urlPermitida(textoUrl);
   if (!url) throw new ErrorMotor("link_invalido");
+  if (/(^|\.)instagram\.com$/i.test(url.hostname)) {
+    const ig = await extraerDeInstagram(url);
+    if (ig) return ig;
+  }
   const pagina = await descargar(url.href, MAX_IMAGEN_BYTES);
 
   // Link directo a una imagen.
