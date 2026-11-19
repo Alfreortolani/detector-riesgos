@@ -522,8 +522,25 @@ footer .wrap { display: flex; justify-content: space-between; gap: 12px; flex-wr
     $("perfil").value = e.perfil;
     pintarBotonesEjemplo();
     actualizarContador();
-    mostrar(D.normalizar(e.resultado), e.texto, "ejemplo");
-    aviso(estado.motor ? "Este es el resultado de referencia. Tocá «Analizar texto» para correrlo en vivo." : "");
+    // Con IA disponible, el ejemplo carga solo el texto: el resultado sale al tocar «Analizar texto».
+    // Sin IA (archivo abierto sin servidor), se muestra el resultado de referencia.
+    if (estado.motor) {
+      vaciarResultado();
+      aviso("Texto de prueba cargado. Tocá «Analizar texto» para ver el análisis.");
+    } else {
+      mostrar(D.normalizar(e.resultado), e.texto, "ejemplo");
+      aviso("");
+    }
+  }
+
+  function vaciarResultado() {
+    estado.analizado = "";
+    $("semaforo").removeAttribute("data-nivel");
+    $("veredicto").removeAttribute("data-nivel");
+    $("v-titulo").textContent = "Sin analizar";
+    $("v-texto").textContent = "Elegí un texto de prueba o pegá el tuyo, y tocá «Analizar texto».";
+    $("v-etiqueta").hidden = true;
+    $("detalle").innerHTML = "";
   }
 
   // ── Motores: Claude (en claude.ai), servidor propio (Vercel) o solo ejemplos ──
@@ -858,8 +875,7 @@ footer .wrap { display: flex; justify-content: space-between; gap: 12px; flex-wr
 
   $("pie-version").textContent = "Matriz de evaluación v" + D.VERSION_MATRIZ;
 
-  // Arranca con un texto de prueba cargado para que se vea qué hace la herramienta.
-  cargarEjemplo("mail");
+  // Arranca vacío: sin texto ni resultado previo.
   detectarMotor();
 })();
 </script>
