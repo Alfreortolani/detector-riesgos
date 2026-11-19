@@ -289,7 +289,10 @@ module.exports = async function handler(req, res) {
   } catch (e) {
     if (e instanceof ErrorMotor) {
       if (e.codigo === "api" || e.codigo === "link_inaccesible") console.error(e.message);
-      return res.status(ESTADO_HTTP[e.codigo] || 500).json({ error: e.codigo });
+      const respuesta = { error: e.codigo };
+      // Para diagnosticar: el motivo que dio el proveedor (nunca incluye la clave).
+      if (e.codigo === "api") respuesta.detalle = String(e.message).slice(0, 300);
+      return res.status(ESTADO_HTTP[e.codigo] || 500).json(respuesta);
     }
     console.error(e);
     return res.status(500).json({ error: "interno" });
